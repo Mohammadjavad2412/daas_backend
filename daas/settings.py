@@ -12,7 +12,11 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 from django.utils.translation import gettext_lazy as _
+from dotenv import load_dotenv
 import os
+
+MODE=os.getenv("DAAS_MODE")
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -96,10 +100,23 @@ WSGI_APPLICATION = 'daas.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
+
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+
+        'NAME': os.getenv("DAAS_POSTGRES_NAME"),
+
+        'USER': os.getenv("DAAS_POSTGRES_USER"),
+
+        'PASSWORD': os.getenv("DAAS_POSTGRES_PASSWORD"),
+
+        'HOST': os.getenv("DAAS_POSTGRES_HOST"),
+
+        'PORT': os.getenv("DAAS_POSTGRES_PORT"),
+
     }
+
 }
 
 
@@ -153,3 +170,10 @@ AUTH_USER_MODEL = 'users.Users'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+if MODE:
+    if MODE.lower()=="production" or MODE.lower()=='prod':
+        DEBUG=False
+        from django.core.management.utils import get_random_secret_key
+        SECRET_KEY=get_random_secret_key()
+        

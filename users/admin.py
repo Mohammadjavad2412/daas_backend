@@ -1,6 +1,5 @@
 from django.contrib import admin
-from users.models import Users,Daas
+from users.models import Users
 
 
 admin.site.register(Users)
-admin.site.register(Daas)

@@ -1,0 +1,30 @@
+version: '3.7'
+services:
+  psql:
+    container_name: postgres_daas_server
+    # image: nexus:443/postgres:latest
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - '5432:5432'
+    restart: unless-stopped
+  ips_server:
+    build: .
+    image: daas_server:latest
+    restart: always
+    environment:
+      - DAAS_POSTGRES_NAME=ips_server
+      - DAAS_POSTGRES_HOST=psql
+      - DAAS_POSTGRES_PORT=5432
+      - DAAS_POSTGRES_USER=postgres
+      - DAAS_POSTGRES_PASSWORD=postgres
+      - DAAS_MODE=production
+    ports:
+      - "8000:8000"  
+    command: bash -c "make run"
+    container_name: daas_srv_backend
+    depends_on:
+      - psql
