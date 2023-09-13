@@ -16,9 +16,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
+from django.conf.urls.static import static
+from daas import settings
+
 
 urlpatterns = [
     path('@dmin/', admin.site.urls),
     path("users/",include("users.urls",namespace="users")),
     path("config/",include("config.urls",namespace="config")),
 ]
+urlpatterns+=static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+urlpatterns+=static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
