@@ -11,12 +11,12 @@ services:
     ports:
       - '5432:5432'
     restart: unless-stopped
-  ips_server:
+  daas_server:
     build: .
     image: daas_server:latest
     restart: always
     environment:
-      - DAAS_POSTGRES_NAME=ips_server
+      - DAAS_POSTGRES_NAME=postgres
       - DAAS_POSTGRES_HOST=psql
       - DAAS_POSTGRES_PORT=5432
       - DAAS_POSTGRES_USER=postgres
@@ -28,3 +28,4 @@ services:
     container_name: daas_srv_backend
     depends_on:
       - psql
+      
