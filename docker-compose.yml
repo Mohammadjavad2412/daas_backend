@@ -11,7 +11,7 @@ services:
     ports:
       - '5432:5432'
     restart: unless-stopped
-  ips_server:
+  daas_server:
     build: .
     image: daas_server:latest
     restart: always
