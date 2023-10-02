@@ -12,7 +12,10 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 from django.utils.translation import gettext_lazy as _
+from celery.schedules import crontab
 from dotenv import load_dotenv
+from datetime import datetime
+from datetime import timedelta
 import os
 
 MODE=os.getenv("DAAS_MODE")
@@ -50,6 +53,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'corsheaders',
+    "django_celery_beat",
     
     #apps
     'config.apps.ConfigConfig',
@@ -162,6 +166,20 @@ USE_I18N = True
 
 USE_L10N = True
 
+#celery beat
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=10),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=10),
+}
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
@@ -174,9 +192,35 @@ AUTH_USER_MODEL = 'users.Users'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+CELERY_PERIODIC_TASK_TIME = int(os.getenv("CELERY_PERIODIC_TASK_TIME"))
+
+CELERY_BROKER_URL = os.getenv("CELRY_BROKER_URL")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_BROKER_URL")
+
+CELERY_BEAT_SCHEDULE = { 
+    'stop_unused_container' : {  
+        'task': 'users.tasks.stop_unused_container', 
+        'schedule': CELERY_PERIODIC_TASK_TIME, 
+    },
+    'time_restriction_checker' : {  
+        'task': 'users.tasks.time_restriction_checker', 
+        'schedule': timedelta(minutes=1), 
+    },
+    'reset_daases_usage' : {  
+        'task': 'users.tasks.reset_daases_usage', 
+        'schedule': crontab(minute='0',hour='0'), 
+    },
+}
+
+TIME_ZONE = 'Asia/Tehran'
+
 if MODE:
     if MODE.lower()=="production" or MODE.lower()=='prod':
         DEBUG=False
         from django.core.management.utils import get_random_secret_key
         SECRET_KEY=get_random_secret_key()
+        SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+        SECURE_SSL_REDIRECT = True
+        SESSION_COOKIE_SECURE = True
+        CSRF_COOKIE_SECURE = True
         

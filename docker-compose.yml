@@ -23,22 +23,32 @@ services:
       - --import-realm
     volumes:
       - /home/keycloak/realm.json:/opt/keycloak/data/import/realm.json
-  daas_server:
-    build: .
-    image: daas_server:latest
+  # daas_server:
+  #   build: .
+  #   image: daas_server:latest
+  #   restart: always
+  #   environment:
+  #     - DAAS_POSTGRES_NAME=postgres
+  #     - DAAS_POSTGRES_HOST=psql
+  #     - DAAS_POSTGRES_PORT=5432
+  #     - DAAS_POSTGRES_USER=postgres
+  #     - DAAS_POSTGRES_PASSWORD=postgres
+  #     - DAAS_MODE=production
+  #   ports:
+  #     - "8000:8000"  
+  #   command: bash -c "make run"
+  #   container_name: daas_srv_backend
+  #   depends_on:
+  #     - psql
+  #     - auth
+  cache:
+    image: redis:6.2-alpine
     restart: always
-    environment:
-      - DAAS_POSTGRES_NAME=postgres
-      - DAAS_POSTGRES_HOST=psql
-      - DAAS_POSTGRES_PORT=5432
-      - DAAS_POSTGRES_USER=postgres
-      - DAAS_POSTGRES_PASSWORD=postgres
-      - DAAS_MODE=production
     ports:
-      - "8000:8000"  
-    command: bash -c "make run"
-    container_name: daas_srv_backend
-    depends_on:
-      - psql
-      - auth
-
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    volumes: 
+      - cache:/data
+volumes:
+  cache:
+    driver: local

@@ -1,4 +1,5 @@
 from daas.settings import BASE_DIR
+from users.models import Daas
 import os
 import random
 import socketserver
@@ -55,3 +56,21 @@ class Desktop:
             subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'CUSTOM_USER={email}','-e',f'PASSWORD={password}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",'lscr.io/linuxserver/webtop:ubuntu-kde'])
         return http_port,https_port
         
+    def stop_daas_from_port(self,port):
+        result = subprocess.check_output(['docker','ps','--filter',f"publish={port}",'--format','{{.ID}}'])
+        container_id = str(result.strip().decode('utf-8'))
+        subprocess.call(['docker','stop',f'{container_id}'])
+        
+    def check_time_restriction(self,daas:Daas):
+        usage_in_minute = daas.usage_in_minute
+        allowed_usage_in_hour = daas.time_limit_value_in_hour
+        allowed_usage_in_minute = allowed_usage_in_hour * 60
+        if usage_in_minute > allowed_usage_in_minute:
+            return False
+        return True
+    
+    def run_container_by_port(self,port):
+        result = subprocess.check_output(['docker','ps','--filter',f"publish={port}",'--format','{{.ID}}'])
+        container_id = str(result.strip().decode('utf-8'))
+        subprocess.call(['docker','restart',f'{container_id}'])
+    
