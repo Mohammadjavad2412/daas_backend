@@ -22,6 +22,8 @@ class Daas(models.Model):
     time_limit_value_in_hour = models.PositiveIntegerField(null=True,blank=True)
     last_uptime = models.DateTimeField(null=True,blank=True)
     is_running = models.BooleanField(default=False)
+    exceeded_usage = models.BooleanField(default=False)
+    container_id = models.CharField(null=False,max_length=50,blank=False)
     usage_in_minute = models.FloatField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     

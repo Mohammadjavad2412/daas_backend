@@ -17,3 +17,4 @@ class Command(BaseCommand):
             daas.last_uptime = datetime.datetime.now()
             daas.is_running=False
             daas.save()
+            

@@ -53,7 +53,7 @@ class Desktop:
         if not http_port and not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
-            subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'CUSTOM_USER={email}','-e',f'PASSWORD={password}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",'lscr.io/linuxserver/webtop:ubuntu-kde'])
+            subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'CUSTOM_USER={email}','-e',f'PASSWORD={password}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",,"--read-only",'lscr.io/linuxserver/webtop:ubuntu-kde'])
         return http_port,https_port
         
     def stop_daas_from_port(self,port):
@@ -69,8 +69,11 @@ class Desktop:
             return False
         return True
     
-    def run_container_by_port(self,port):
+    def get_container_id_from_port(self,port):
         result = subprocess.check_output(['docker','ps','--filter',f"publish={port}",'--format','{{.ID}}'])
         container_id = str(result.strip().decode('utf-8'))
-        subprocess.call(['docker','restart',f'{container_id}'])
+        return container_id
+    
+    def run_container_by_container_id(self,container_id):
+        subprocess.call(['docker','start',f'{container_id}'])
     

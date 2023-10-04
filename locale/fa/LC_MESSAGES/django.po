@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-04 14:55+0330\n"
+"POT-Creation-Date: 2023-10-04 13:00+0330\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,26 +22,50 @@ msgstr ""
 msgid "There is can be only one config instance"
 msgstr "شما فقط میتوانید یک تنظیمات داشته باشید"
 
-#: daas/settings.py:130
+#: daas/settings.py:157
 msgid "Farsi"
 msgstr "قارسی"
 
-#: daas/settings.py:131
+#: daas/settings.py:158
 msgid "English"
 msgstr "انگلیسی"
 
-#: users/views.py:38
+#: users/views.py:58
+msgid "you reach your time limit!"
+msgstr "زمان استفاده شما از حد مجاز گذشته است"
+
+#: users/views.py:67
 msgid "invalid user"
 msgstr "کاربر معتبر نیست"
 
-#: users/views.py:43
+#: users/views.py:75 users/views.py:113
 msgid "successfull"
 msgstr "موفق"
 
-#: users/views.py:45
+#: users/views.py:77
 msgid "you are not admin"
 msgstr "شما ادمین نیستید"
 
-#: users/views.py:48
+#: users/views.py:80
 msgid "invalid username or password"
 msgstr "ایمیل یا پسورد اشتباه است"
+
+#: users/views.py:118
+msgid "invalid data passed"
+msgstr "کاربر معتبر نیست"
+
+#: users/views.py:158
+msgid "successfully update"
+msgstr "با موفقیت به روز رسانی شد"
+
+#: users/views.py:160
+msgid "you can't update usage of down desktop!"
+msgstr "این دسکتاپ فعال نیست"
+
+#: users/views.py:163
+msgid "internal server error"
+msgstr "خطای داخلی"
+
+#: users/views.py:175
+msgid "reset successfully"
+msgstr "با موفقیت به روز رسانی شد"

@@ -15,7 +15,7 @@ class DaasSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Daas
-        fields = ('id','email','http_port','https_port','time_limit_duration','time_limit_value_in_hour','last_uptime','is_running','base_url','usage_in_minute','created_at')
+        fields = ('id','email','http_port','https_port','time_limit_duration','time_limit_value_in_hour','last_uptime','exceeded_usage','is_running','base_url','usage_in_minute','created_at')
         
     def get_base_url(self,obj):
         return Config.objects.all().first().daas_provider_baseurl
@@ -23,7 +23,7 @@ class DaasSerializer(serializers.ModelSerializer):
 class UpdateDaasSerializer(serializers.ModelSerializer):
     class Meta:
         model = Daas
-        fields = ['time_limit_duration','time_limit_value_in_hour']
+        fields = ['time_limit_duration','time_limit_value_in_hour',]
        
         
 class DaasTokenObtainSerializer(serializers.Serializer):

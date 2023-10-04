@@ -7,6 +7,7 @@ from users.serializers import LogInSerializer,DaasSerializer,UpdateDaasSerialize
 from users.handler import DaasTokenAuthentication
 from daas.permissions import OnlyAdmin,OnlyOwner
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.exceptions import PermissionDenied
 from services.keycloak import Keycloak
 from django.utils.translation import gettext as _
 from users.token import CustomToken
@@ -44,18 +45,22 @@ class LogInView(APIView):
                     logging.info(f"user with email: {email} logged in from ip: {ip_address}")
                     config = Config.objects.all().last()
                     daas = Daas.objects.filter(email=email).last()
-                    if daas:
+                    if daas and daas.exceeded_usage == False:
                         refresh_token = str(CustomToken.for_user(daas))
                         access_token = str(CustomToken.for_user(daas).access_token)
                         http_port = daas.http_port
-                        Desktop().run_container_by_port(http_port)
+                        container_id = daas.container_id
+                        Desktop().run_container_by_container_id(container_id)
                         daas.is_running=True
                         daas.last_uptime=datetime.datetime.now()
                         daas.save()
                         return Response({"http":f"http://{config.daas_provider_baseurl}:{daas.http_port}","https":f"https://{config.daas_provider_baseurl}:{daas.https_port}","refresh_token":refresh_token,"access_token":access_token},status.HTTP_200_OK)
+                    elif daas and daas.exceeded_usage:
+                        return Response({"error":_("you reach your time limit!")},status=status.HTTP_403_FORBIDDEN)
                     else:
                         http_port,https_port = Desktop().create_daas(email,user_password)
-                        daas = Daas.objects.create(email=email,http_port=http_port,https_port=https_port,is_running=True,last_uptime=datetime.datetime.now())
+                        container_id = Desktop().get_container_id_from_port(http_port)
+                        daas = Daas.objects.create(email=email,http_port=http_port,https_port=https_port,is_running=True,last_uptime=datetime.datetime.now(),container_id=container_id)
                         refresh_token = str(CustomToken.for_user(daas))
                         access_token = str(CustomToken.for_user(daas).access_token)
                         return Response({"http":f"http://{config.daas_provider_baseurl}:{http_port}","https":f"https://{config.daas_provider_baseurl}:{https_port}","refresh_token":refresh_token,"access_token":access_token},status.HTTP_200_OK)
@@ -116,9 +121,7 @@ class DaasView(ModelViewSet):
     def destroy(self, request,pk,*args, **kwargs):
         daas = self.get_object()
         if daas:
-            http = daas.http_port
-            result = subprocess.check_output(['docker','ps','--filter',f"publish={http}",'--format','{{.ID}}'])
-            container_id = str(result.strip().decode('utf-8'))
+            container_id = daas.container_id
             subprocess.call(['docker','stop',f'{container_id}'])
             subprocess.call(['docker','rm',f'{container_id}'])
         return super().destroy(request, *args, **kwargs)
@@ -159,4 +162,27 @@ class UpdateUsage(ModelViewSet):
         except:
             logging.error(traceback.format_exc())
             return Response({"error":_("internal server error")},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+class ResetUsage(ModelViewSet):
+    queryset = Daas.objects.all()
+    authentication_classes = (DaasTokenAuthentication,)
+    permission_classes = (OnlyAdmin,)
+    http_method_names = ['get',]
+    serializer_class = DaasSerializer
+    
+    
+    def list(self, request, *args, **kwargs):
+        daases = self.get_queryset()
+        for daas in daases:
+            daas.usage_in_minute = 0
+            daas.exceeded_usage = False
+            daas.save()
+            return Response({"info":_("reset successfully")})
+    
+    def retrieve(self, request, *args, **kwargs):
+        daas = self.get_object()
+        daas.usage_in_minute = 0
+        daas.exceeded_usage = False
+        daas.save()
+        return Response({"info":_("reset successfully")})
         

@@ -14,7 +14,6 @@ from pathlib import Path
 from django.utils.translation import gettext_lazy as _
 from celery.schedules import crontab
 from dotenv import load_dotenv
-from datetime import datetime
 from datetime import timedelta
 import os
 
@@ -167,8 +166,6 @@ USE_I18N = True
 USE_L10N = True
 
 #celery beat
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
-
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -193,14 +190,13 @@ AUTH_USER_MODEL = 'users.Users'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CELERY_PERIODIC_TASK_TIME = int(os.getenv("CELERY_PERIODIC_TASK_TIME"))
-
 CELERY_BROKER_URL = os.getenv("CELRY_BROKER_URL")
-CELERY_RESULT_BACKEND = os.getenv("CELERY_BROKER_URL")
-
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
+CELERY_TIME_ZONE = "Asia/Tehran"
 CELERY_BEAT_SCHEDULE = { 
     'stop_unused_container' : {  
         'task': 'users.tasks.stop_unused_container', 
-        'schedule': CELERY_PERIODIC_TASK_TIME, 
+        'schedule': timedelta(minutes=1), 
     },
     'time_restriction_checker' : {  
         'task': 'users.tasks.time_restriction_checker', 
