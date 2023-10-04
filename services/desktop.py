@@ -53,7 +53,7 @@ class Desktop:
         if not http_port and not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
-            subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'CUSTOM_USER={email}','-e',f'PASSWORD={password}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",,"--read-only",'lscr.io/linuxserver/webtop:ubuntu-kde'])
+            subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'CUSTOM_USER={email}','-e',f'PASSWORD={password}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001","--read-only",'lscr.io/linuxserver/webtop:ubuntu-kde'])
         return http_port,https_port
         
     def stop_daas_from_port(self,port):
