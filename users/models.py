@@ -13,11 +13,13 @@ class Users(AbstractUser):
 class Daas(models.Model):
     
     TIME_CHOICES = (("PERMANENTLY","PERMANENTLY"),("DAILY","DAILY"),("WEEKLY","WEEKLY"),("MONTHLY","MONTHLY"),("TOTALY","TOTALY"))
+    ACCESS_CHOICES = (("NO_ACCESS","NO_ACCESS"),("HAS_ACCESS","HAS_ACCESS"))
     
     id = models.UUIDField(primary_key=True,default=uuid.uuid4,unique=True)
     email = models.CharField(null=False,max_length=100,unique=True)
     http_port = models.PositiveIntegerField(unique=True,null=True)
     https_port = models.PositiveIntegerField(unique=True,null=True)
+    access_mode = models.CharField(max_length=100,choices=ACCESS_CHOICES,default="NO_ACCESS",null=False,blank=True)
     time_limit_duration = models.CharField(max_length=20,choices=TIME_CHOICES,default="PERMANENTLY")
     time_limit_value_in_hour = models.PositiveIntegerField(null=True,blank=True)
     last_uptime = models.DateTimeField(null=True,blank=True)

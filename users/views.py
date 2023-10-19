@@ -7,7 +7,6 @@ from users.serializers import LogInSerializer,DaasSerializer,UpdateDaasSerialize
 from users.handler import DaasTokenAuthentication
 from daas.permissions import OnlyAdmin,OnlyOwner
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.exceptions import PermissionDenied
 from services.keycloak import Keycloak
 from django.utils.translation import gettext as _
 from users.token import CustomToken
@@ -19,6 +18,7 @@ from daas.pagination import CustomPagination
 from users.models import Daas,Users
 from config.models import Config
 from utils.fuctions import get_client_ip_address
+import os
 import subprocess
 import datetime
 import logging 
@@ -58,7 +58,11 @@ class LogInView(APIView):
                     elif daas and daas.exceeded_usage:
                         return Response({"error":_("you reach your time limit!")},status=status.HTTP_403_FORBIDDEN)
                     else:
-                        http_port,https_port = Desktop().create_daas(email,user_password)
+                        force_credential = bool(os.getenv("DAAS_FORCE_CREDENTIAL"))
+                        if force_credential:
+                            http_port,https_port = Desktop().create_daas_with_credential(email,user_password)
+                        else:
+                            http_port,https_port = Desktop().create_daas_without_crediential()
                         container_id = Desktop().get_container_id_from_port(http_port)
                         daas = Daas.objects.create(email=email,http_port=http_port,https_port=https_port,is_running=True,last_uptime=datetime.datetime.now(),container_id=container_id)
                         refresh_token = str(CustomToken.for_user(daas))
@@ -125,7 +129,6 @@ class DaasView(ModelViewSet):
             subprocess.call(['docker','stop',f'{container_id}'])
             subprocess.call(['docker','rm',f'{container_id}'])
         return super().destroy(request, *args, **kwargs)
-        
         
 class Profile(ModelViewSet):
     
