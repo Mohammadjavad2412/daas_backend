@@ -44,7 +44,7 @@ class LogInView(APIView):
                     ip_address = get_client_ip_address(request)
                     logging.info(f"user with email: {email} logged in from ip: {ip_address}")
                     config = Config.objects.all().last()
-                    daas = Daas.objects.filter(email=email).last()
+                    daas = Daas.objects.filter(email__iexact=email).last()
                     if daas and daas.exceeded_usage == False:
                         refresh_token = str(CustomToken.for_user(daas))
                         access_token = str(CustomToken.for_user(daas).access_token)
@@ -58,7 +58,11 @@ class LogInView(APIView):
                     elif daas and daas.exceeded_usage:
                         return Response({"error":_("you reach your time limit!")},status=status.HTTP_403_FORBIDDEN)
                     else:
-                        force_credential = bool(os.getenv("DAAS_FORCE_CREDENTIAL"))
+                        credential_env = os.getenv("DAAS_FORCE_CREDENTIAL")
+                        if credential_env.lower()=="false":
+                            force_credential = False
+                        else:
+                            force_credential = True
                         if force_credential:
                             http_port,https_port = Desktop().create_daas_with_credential(email,user_password)
                         else:
@@ -114,7 +118,7 @@ class DaasView(ModelViewSet):
             data = request.data
             ser_data = UpdateDaasSerializer(instance=daas,data=data)
             if ser_data.is_valid():
-                ser_data.save()
+                self.perform_update(ser_data)
                 return Response({"info":_("successfull")},status=status.HTTP_202_ACCEPTED)
             else:
                 return Response(ser_data.errors,status=status.HTTP_400_BAD_REQUEST)
