@@ -209,6 +209,9 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
+FILE_SERVER_HOST = os.getenv("FILE_SERVER_HOST")
+MANEGER_HOST = os.getenv("MANEGER_HOST")
+
 TIME_ZONE = 'Asia/Tehran'
 
 if MODE:

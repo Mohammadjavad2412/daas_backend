@@ -5,3 +5,4 @@ migrations
 *.pyc
 static
 celerybeat-schedule
+temp_configs/*

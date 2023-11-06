@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from django.contrib.auth import authenticate
-from users.serializers import LogInSerializer,DaasSerializer,UpdateDaasSerializer,UserSerializer
+from users.serializers import LogInSerializer,DaasSerializer,UpdateDaasSerializer,UserSerializer,ValidUserSerializer
 from users.handler import DaasTokenAuthentication
 from daas.permissions import OnlyAdmin,OnlyOwner
 from rest_framework.viewsets import ModelViewSet
@@ -118,7 +118,7 @@ class DaasView(ModelViewSet):
             data = request.data
             ser_data = UpdateDaasSerializer(instance=daas,data=data)
             if ser_data.is_valid():
-                self.perform_update(ser_data)
+                ser_data.save()
                 return Response({"info":_("successfull")},status=status.HTTP_202_ACCEPTED)
             else:
                 return Response(ser_data.errors,status=status.HTTP_400_BAD_REQUEST)
@@ -192,4 +192,23 @@ class ResetUsage(ModelViewSet):
         daas.exceeded_usage = False
         daas.save()
         return Response({"info":_("reset successfully")})
+    
+        
+class IsValidUser(APIView):
+    def post(self,request):
+        try:
+            data = request.data
+            ser_data = ValidUserSerializer(data=data)
+            if ser_data.is_valid():
+                valid_datas = ser_data.validated_data
+                email = valid_datas['email']
+                user_password = valid_datas['password']
+                authenticator = Keycloak()
+                is_valid_user = authenticator.is_valid_user(email,user_password)
+                return Response({"info":is_valid_user},status=status.HTTP_200_OK)
+            else:
+                return Response(ser_data.errors,status=status.HTTP_400_BAD_REQUEST)
+        except:
+            logging.info(traceback.format_exc())
+            return Response({"error":_("internal server error")})
         

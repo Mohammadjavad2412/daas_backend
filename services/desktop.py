@@ -1,12 +1,16 @@
 from daas.settings import BASE_DIR
 from users.models import Daas
+from django.utils.translation import gettext as _
 from rest_framework import exceptions
+from daas import settings
 import os
+import traceback
 import random
 import logging
 import socketserver
 import subprocess
 import socket
+import yaml
 
 
 logging.basicConfig(level=logging.INFO)
@@ -45,24 +49,24 @@ class Desktop:
 
     def random_free_port(self):
         start_port = 30000
-        end_port = 31000 
+        end_port = 31000
         free_ports = self.find_free_ports(start_port, end_port)
         if free_ports:
             random_port = random.choice(free_ports)
         return random_port
         
-    def create_daas_with_credential(self,email,password,http_port=None,https_port=None,image_name="netpardaz/netsep:noUpload"):
+    def create_daas_with_credential(self,email,password,http_port=None,https_port=None,image_name="netpardaz/netsep:BaseImage"):
         if not http_port or not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
-        subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'CUSTOM_USER={email}','-e',f'PASSWORD={password}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",image_name])
+        subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'CUSTOM_USER={email}','-e',f'PASSWORD={password}','-e',f'FILE_SERVER_HOST={settings.FILE_SERVER_HOST}','-e',f'MANAGER_HOST={settings.MANEGER_HOST}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",image_name])
         return http_port,https_port
     
-    def create_daas_without_crediential(self,http_port=None,https_port=None,image_name="netpardaz/netsep:noUpload"):
+    def create_daas_without_crediential(self,http_port=None,https_port=None,image_name="netpardaz/netsep:BaseImage"):
         if not http_port or not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
-        subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",image_name])
+        subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'FILE_SERVER_HOST={settings.FILE_SERVER_HOST}','-e',f'MANAGER_HOST={settings.MANEGER_HOST}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",image_name])
         return http_port,https_port
     
     def get_image_by_access(self,access_type):
@@ -108,23 +112,52 @@ class Desktop:
         logging.info(f"restart container id:{container_id}")
         subprocess.call(['docker','restart',f'{container_id}'])
         
-    def create_container_with_new_access(self,container_id,new_access):
+    def handle_file_transmition_access(self,container_id,upload_access_mode,download_access_mode):
+        pass
+    
+    def handle_clipboard_access(self,container_id,upload_access_mode=None,download_access_mode=None):
         try:
-            daas = Daas.objects.get(container_id=container_id)
-            http_port = daas.http_port
-            https_port = daas.https_port
-            self.restart_daas(container_id)
-            email,password = self.get_email_pass_daas(container_id)
-            image = self.get_image_by_access(new_access)
-            if image:
-                if email and password:
-                    self.delete_container(container_id)
-                    self.create_daas_with_credential(email,password,http_port,https_port,image)
-                else:
-                    self.delete_container(container_id)
-                    self.create_daas_without_crediential(http_port,https_port,image)
-            else:
-                raise exceptions.ValidationError('image does not implemented yet')
+            task = subprocess.Popen(['docker','exec',f'{container_id}','cat','usr/local/share/kasmvnc/kasmvnc_defaults.yaml'],stdout=subprocess.PIPE)
+            file = yaml.safe_load(task.stdout)    
+            if upload_access_mode != None:    
+                file['data_loss_prevention']['clipboard']['client_to_server']['enabled'] = upload_access_mode
+            if download_access_mode != None:
+                file['data_loss_prevention']['clipboard']['server_to_client']['enabled'] = upload_access_mode
+            with open(f'temp_configs/{container_id}.yml', 'w') as outfile:
+                yaml.dump(file, outfile)
+            subprocess.call(['docker','cp',f'temp_configs/{container_id}.yml',f'{container_id}:/usr/local/share/kasmvnc/',])
+            subprocess.call(['docker','exec',f'{container_id}','cp',f'/usr/local/share/kasmvnc/{container_id}.yml','/usr/local/share/kasmvnc/kasmvnc_defaults.yaml'])
+            subprocess.call(['docker','exec',f'{container_id}','rm',f'/usr/local/share/kasmvnc/{container_id}.yml'])
+            os.remove(f"{BASE_DIR}/temp_configs/{container_id}.yml")
         except:
-            raise exceptions.ValidationError('invalid daas')
+            logging.error(traceback.format_exc())
+                
+    def update_container_with_new_access(self,container_id,validated_data):
+        try:
+            self.restart_daas(container_id)
+            if 'can_upload_file' or 'can_download_file' in validated_data:
+                upload_access_mode = validated_data['can_upload_file']
+                download_access_mode = validated_data['can_download_file']
+                self.handle_file_transmition_access(self,container_id,upload_access_mode,download_access_mode)
+            if 'clipboard_up' or 'clipboard_down' in validated_data:
+                upload_access_mode = None
+                download_access_mode = None
+                if 'clipboard_down' in validated_data:
+                    upload_access_mode = validated_data['clipboard_up']
+                    if upload_access_mode.lower() == 'false':
+                        upload_access_mode = False
+                    else:
+                        upload_access_mode = True
+                if 'clipboard_down' in validated_data:
+                    download_access_mode = validated_data['clipboard_down']
+                    if download_access_mode.lower() == 'false':
+                        download_access_mode = False
+                    else:
+                        download_access_mode = True
+                self.handle_clipboard_access(self,container_id,upload_access_mode,download_access_mode)
+            self.restart_daas(container_id)
+            
+        except:
+            logging.error(traceback.format_exc())
+            raise exceptions.ValidationError(_('invalid daas'))
         
