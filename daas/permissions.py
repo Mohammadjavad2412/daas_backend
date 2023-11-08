@@ -2,15 +2,6 @@ from rest_framework.permissions import BasePermission
 
 
 class OnlyOwner(BasePermission):
-    
-    def has_permission(self, request, view):
-        try:
-            if request.user.is_running:
-                return True
-            return False
-        except:
-            return False
-    
     def has_object_permission(self, request, view, obj):
         if request.user.email == obj.email:
             return True

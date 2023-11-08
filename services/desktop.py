@@ -11,6 +11,7 @@ import socketserver
 import subprocess
 import socket
 import yaml
+import json
 
 
 logging.basicConfig(level=logging.INFO)
@@ -112,6 +113,29 @@ class Desktop:
         logging.info(f"restart container id:{container_id}")
         subprocess.call(['docker','restart',f'{container_id}'])
         
+    # def set_credential(self,container_id,email=None,password=None):
+    #     result = subprocess.check_output(['docker','inspect',f'{container_id}'])
+    #     verbose_container_id = json.loads(result.strip().decode('utf-8'))[0]['Id']
+    #     try:
+    #         with open(f"/var/lib/docker/containers/{verbose_container_id}/config.v2.json") as config_file:
+    #             new_config = json.load(config_file)
+    #             envs = list(new_config['Config']['Env'])
+    #             for env in envs:
+    #                 if str(env).startswith("CUSTOM_USER"):
+    #                     email_index = envs.index(env)
+    #                     envs[email_index] = f"CUSTOM_USER=ali"
+    #                 if str(env).startswith("PASSWORD"):
+    #                     password_index = envs.index(env)
+    #                     envs[password_index] = f"PASSWORD=ali"
+    #             new_config['Config']['Env'] = envs
+    #             new_config_file = json.dump(new_config)
+    #             config_file.close()
+    #         with open(f"/var/lib/docker/containers/{verbose_container_id}/config.v2.json","+w") as config_file:
+    #             config_file.write(new_config_file)
+    #             config_file.close()
+    #     except:
+    #         logging.error(traceback.format_exc())
+            
     def handle_file_transmition_access(self,container_id,upload_access_mode,download_access_mode):
         pass
     

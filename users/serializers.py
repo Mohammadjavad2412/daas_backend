@@ -50,4 +50,18 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = Users
         fields = '__all__'
+      
+      
+class ChangePasswordSerializer(serializers.ModelSerializer):
+    email = serializers.CharField(required=True)
+    password = serializers.CharField(write_only=True, required=True)
+    
+    class Meta:
+        model = Users
+        fields = ['email','password']  
         
+    def update(self, instance:Users, validated_data):
+        if "password" in validated_data:
+            instance.set_password(validated_data['password'])      
+            instance.save()
+        return super().update(instance,validated_data)

@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from django.contrib.auth import authenticate
-from users.serializers import LogInSerializer,DaasSerializer,UpdateDaasSerializer,UserSerializer,ValidUserSerializer
+from users.serializers import LogInSerializer,DaasSerializer,UpdateDaasSerializer,UserSerializer,ValidUserSerializer,ChangePasswordSerializer
 from users.handler import DaasTokenAuthentication
 from daas.permissions import OnlyAdmin,OnlyOwner
 from rest_framework.viewsets import ModelViewSet
@@ -51,6 +51,7 @@ class LogInView(APIView):
                         http_port = daas.http_port
                         container_id = daas.container_id
                         Desktop().run_container_by_container_id(container_id)
+                        Desktop().set_credential(container_id)
                         daas.is_running=True
                         daas.last_uptime=datetime.datetime.now()
                         daas.save()
@@ -212,3 +213,11 @@ class IsValidUser(APIView):
             logging.info(traceback.format_exc())
             return Response({"error":_("internal server error")})
         
+        
+class UsersView(ModelViewSet):
+    queryset=Users.objects.filter(is_superuser=True)
+    serializer_class = ChangePasswordSerializer
+    permission_classes = [OnlyAdmin,OnlyOwner]
+    authentication_classes = (DaasTokenAuthentication,)
+    http_method_names = ['put','patch']
+    
