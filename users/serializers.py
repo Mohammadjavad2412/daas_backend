@@ -20,7 +20,8 @@ class DaasSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Daas
-        fields = ('id','email','http_port','https_port','can_upload_file','can_download_file','clipboard_up','clipboard_down','time_limit_duration','time_limit_value_in_hour','last_uptime','exceeded_usage','is_running','base_url','usage_in_minute','created_at')
+        fields = ('id','email','http_port','https_port','can_upload_file','can_download_file','clipboard_up','clipboard_down','webcam_privilege',
+                  'microphone_privilege','time_limit_duration','time_limit_value_in_hour','last_uptime','exceeded_usage','is_running','base_url','usage_in_minute','forbidden_upload_files','forbidden_download_files','created_at')
         
     def get_base_url(self,obj):
         return Config.objects.all().first().daas_provider_baseurl
@@ -29,7 +30,8 @@ class DaasSerializer(serializers.ModelSerializer):
 class UpdateDaasSerializer(serializers.ModelSerializer):
     class Meta:
         model = Daas
-        fields = ['time_limit_duration','time_limit_value_in_hour','can_upload_file','can_download_file','clipboard_up','clipboard_down']
+        fields = ['time_limit_duration','time_limit_value_in_hour','can_upload_file','can_download_file','clipboard_up','clipboard_down','webcam_privilege',
+                  'microphone_privilege','forbidden_upload_files','forbidden_download_files']
     
         
 class DaasTokenObtainSerializer(serializers.Serializer):
@@ -60,8 +62,14 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         model = Users
         fields = ['email','password']  
         
-    def update(self, instance:Users, validated_data):
+    def update(self, instance, validated_data):
         if "password" in validated_data:
-            instance.set_password(validated_data['password'])      
-            instance.save()
-        return super().update(instance,validated_data)
+            password = validated_data.pop("password")
+            same_password_sent = instance.check_password(password)
+            if same_password_sent:
+                raise serializers.ValidationError("try another password")
+            instance.set_password(password)      
+            return super().update(instance, validated_data)
+        else:
+            raise serializers.ValidationError("password not sent")
+        

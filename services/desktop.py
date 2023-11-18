@@ -67,7 +67,7 @@ class Desktop:
         if not http_port or not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
-        subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'FILE_SERVER_HOST={settings.FILE_SERVER_HOST}','-e',f'MANAGER_HOST={settings.MANEGER_HOST}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",image_name])
+        subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'FILE_SERVER_HOST={settings.FILE_SERVER_HOST}','-e',f'MANAGER_HOST={settings.MANEGER_HOST}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",'-v','- /var/run/docker.sock:/var/run/docker.sock','--device','/dev/dri',image_name])
         return http_port,https_port
     
     def get_image_by_access(self,access_type):

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.contrib.postgres.fields import ArrayField
 import uuid
 
 
@@ -23,6 +24,8 @@ class Daas(models.Model):
     can_download_file = models.BooleanField(default=False)
     clipboard_up = models.BooleanField(default=False)
     clipboard_down = models.BooleanField(default=False)
+    webcam_privilege = models.BooleanField(default=False)
+    microphone_privilege = models.BooleanField(default=False)
     time_limit_duration = models.CharField(max_length=20,choices=TIME_CHOICES,default="PERMANENTLY")
     time_limit_value_in_hour = models.PositiveIntegerField(null=True,blank=True)
     last_uptime = models.DateTimeField(null=True,blank=True)
@@ -30,5 +33,7 @@ class Daas(models.Model):
     exceeded_usage = models.BooleanField(default=False)
     container_id = models.CharField(null=False,max_length=50,blank=False)
     usage_in_minute = models.FloatField(default=0)
+    forbidden_upload_files = ArrayField(models.CharField(max_length=15,null=True,blank=True),null=True,blank=True)
+    forbidden_download_files = ArrayField(models.CharField(max_length=15,null=True,blank=True),null=True,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     

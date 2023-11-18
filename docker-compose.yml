@@ -1,5 +1,28 @@
 version: '3.7'
 services:
+  daas:
+    build: .
+    environment:
+      - DAAS_POSTGRES_NAME=postgres
+      - DAAS_POSTGRES_HOST=192.168.2.21
+      - DAAS_POSTGRES_PORT=5432
+      - DAAS_POSTGRES_USER=postgres
+      - DAAS_POSTGRES_PASSWORD=postgres
+      - DAAS_FORCE_CREDENTIAL=True
+      - DAAS_MODE=production
+      - CELERY_PERIODIC_TASK_TIME=60
+      - CELERY_BROKER_URL=redis://192.168.2.21:6379/0
+      - CELERY_RESULT_BACKEND=redis://192.168.2.21:6379/0
+      - FILE_SERVER_HOST=http://192.168.2.20:8001
+      - MANEGER_HOST=http://192.168.2.21:8000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    devices:
+      - dev/dri:/dev/dri
+    ports:
+      - '8000:8000'
+    command: bash -c 'make run'
+    restart: always
   psql:
     container_name: postgres_daas_server
     # image: nexus:443/postgres:latest
