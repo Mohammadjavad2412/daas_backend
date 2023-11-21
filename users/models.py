@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import ArrayField
 from config.models import DaasMetaConfig
 import uuid
+import subprocess
 
 
 class Users(AbstractUser):
@@ -12,10 +13,15 @@ class Users(AbstractUser):
     REQUIRED_FIELDS = ['username']
 
 def get_or_create_last_config():
-    last_meta_config = DaasMetaConfig.objects.last()
-    if not last_meta_config:
+    try:
+        last_meta_config = DaasMetaConfig.objects.last()
+        if not last_meta_config:
+            last_meta_config = DaasMetaConfig.objects.create()
+    except:
+        subprocess.call(['python3','manage.py','makemigrations','config'])
         last_meta_config = DaasMetaConfig.objects.create()
     return last_meta_config
+
 
 class Daas(models.Model):
     
