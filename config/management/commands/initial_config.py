@@ -1,8 +1,10 @@
 from config.models import DaasMetaConfig
+from django.core.management.base import BaseCommand
 
-
-def initial():
-    meta_config = DaasMetaConfig.objects.all()
-    if not meta_config:
-        DaasMetaConfig.objects.create()
+def initial(BaseComamand):
+    
+    def handle(self,*args,**options):
+        meta_config = DaasMetaConfig.objects.all()
+        if not meta_config:
+            DaasMetaConfig.objects.create()
         
