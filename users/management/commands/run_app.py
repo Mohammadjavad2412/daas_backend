@@ -10,7 +10,7 @@ def run_app():
 def run_celery():
     subprocess.call(['celery','-A','daas','worker','-B','-l','INFO'])
     
-def initial():
+def initial_configs():
     subprocess.call(['python3', 'manage.py', 'initial_config'])
 
 # def run_celery_beat():
@@ -21,7 +21,7 @@ class Command(BaseCommand):
     def handle(self, *args: Any, **options: Any):
         t1 = threading.Thread(target=run_app)
         t2 = threading.Thread(target=run_celery)
-        initial()
+        initial_configs()
         # t3 = threading.Thread(target=run_celery_beat)
         t1.start()
         t2.start()
