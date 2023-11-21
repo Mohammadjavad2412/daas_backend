@@ -6,5 +6,5 @@ WORKDIR /app
 RUN pip install --no-cache-dir -r requirements.txt
 RUN python3 -m pip install -U pip
 RUN apt update
-RUN apt install docker.io
+RUN apt install docker.io -y
 EXPOSE 8000
