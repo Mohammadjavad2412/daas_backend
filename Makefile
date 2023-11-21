@@ -7,7 +7,3 @@ run_app:
 	
 run:
 	python3 manage.py run_app
-
-initial_configs:
-	python3 manage.py initial_configs
-	

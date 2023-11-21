@@ -10,8 +10,8 @@ def run_app():
 def run_celery():
     subprocess.call(['celery','-A','daas','worker','-B','-l','INFO'])
     
-def initial_configs():
-    subprocess.call(['make','initial_configs'])
+# def initial_configs():
+#     subprocess.call(['make','initial_configs'])
 
 # def run_celery_beat():
 #     subprocess.call(['celery','-A','daas','beat','-l','INFO','--scheduler','django_celery_beat.schedulers:DatabaseScheduler'])
