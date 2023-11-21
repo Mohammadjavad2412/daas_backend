@@ -14,8 +14,40 @@ class Config(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.pk and Config.objects.exists():
-        # if you'll not check for self.pk 
-        # then error will also be raised in the update of exists model
             raise ValidationError(_('There is can be only one config instance'))
         return super(Config, self).save(*args, **kwargs)
+    
+    
+class DaasMetaConfig(models.Model):
+    
+    TIME_CHOICES = (("PERMANENTLY","PERMANENTLY"),("DAILY","DAILY"),("WEEKLY","WEEKLY"),("MONTHLY","MONTHLY"),("TOTALY","TOTALY"))
+
+    can_upload_file = models.BooleanField(default=False)
+    can_download_file = models.BooleanField(default=False)
+    clipboard_up = models.BooleanField(default=False)
+    clipboard_down = models.BooleanField(default=False)
+    webcam_privilege = models.BooleanField(default=False)
+    microphone_privilege = models.BooleanField(default=False)
+    time_limit_duration = models.CharField(max_length=20,choices=TIME_CHOICES,default="PERMANENTLY")
+    time_limit_value_in_hour = models.PositiveIntegerField(null=True,blank=True)
+    is_permanently = models.BooleanField(default=True)
+    max_transmission_upload_size = models.PositiveBigIntegerField(default=50)
+    max_transmission_download_size = models.PositiveBigIntegerField(default=500)
+    
+    def save(self, *args, **kwargs):
+        if not self.pk and DaasMetaConfig.objects.exists():
+            raise ValidationError(_('There is can be only one config instance'))
+        return super(Config, self).save(*args, **kwargs)
+    
+    
+class WhiteListFiles(models.Model):
+    
+    file_type = models.CharField(max_length=20,unique=True,null=False,blank=False)
+    allowed_for_upload = models.BooleanField(default=False)
+    allowed_for_download = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True,null=True)
+    
+    def __str__(self) -> str:
+        return self.file_type
     

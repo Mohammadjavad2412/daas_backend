@@ -145,6 +145,8 @@ class Profile(ModelViewSet):
             ser_data = DaasSerializer(requester)
         elif isinstance(requester,Users):
             ser_data = UserSerializer(requester)
+        else:
+            return Response({"error":_("invalid data passed")},status=status.HTTP_400_BAD_REQUEST)
         return Response(ser_data.data,status=status.HTTP_200_OK)
         
 
@@ -219,16 +221,4 @@ class UsersView(ModelViewSet):
     permission_classes = [OnlyAdmin,OnlyOwner]
     authentication_classes = (DaasTokenAuthentication,)
     http_method_names = ['put','patch']
-    
-    # def update(self, request, *args, **kwargs):
-    #     self.object = self.get_object()
-    #     serializer = self.get_serializer(instance=self.object,data=request.data)
-
-    #     if serializer.is_valid():
-    #         user = Users.objects.get(id=self.object.id)
-    #         user.set_password(serializer.data.get('password'))
-    #         user.email=serializer.data.get('email')
-    #         user.save()
-    #         return Response({"info":_("successfully update")},status=status.HTTP_200_OK)
-    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
