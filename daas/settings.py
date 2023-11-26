@@ -53,7 +53,7 @@ INSTALLED_APPS = [
     'django_filters',
     'corsheaders',
     "django_celery_beat",
-    
+    'rest_framework_simplejwt.token_blacklist',
     #apps
     'config.apps.ConfigConfig',
     'users.apps.UsersConfig',

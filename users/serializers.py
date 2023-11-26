@@ -3,7 +3,8 @@ from drf_writable_nested import WritableNestedModelSerializer
 from users.models import Daas,Users
 from config.models import Config,WhiteListFiles,DaasMetaConfig
 from config.serializers import DaasMetaConfigSerializer
-import requests
+from users.token import CustomToken
+import base64
 
 
 class LogInSerializer(serializers.Serializer):

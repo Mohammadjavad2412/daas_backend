@@ -11,6 +11,7 @@ from services.keycloak import Keycloak
 from django.utils.translation import gettext as _
 from users.token import CustomToken
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.models import AnonymousUser
 from rest_framework import filters
 from rest_framework.permissions import OR
 from drf_writable_nested import WritableNestedModelSerializer
@@ -165,6 +166,8 @@ class Profile(ModelViewSet):
     def get(self,request):
         requester = request.user
         if isinstance(requester,Daas):
+            if requester.is_lock:
+                return Response({"error":_("you are blocked!")},status=status.HTTP_401_UNAUTHORIZED)
             ser_data = DaasSerializer(requester)
         elif isinstance(requester,Users):
             ser_data = UserSerializer(requester)
@@ -180,7 +183,9 @@ class UpdateUsage(ModelViewSet):
     def get(self,request):
         try:
             daas = request.user
-            if daas.is_running:
+            if daas and daas and daas.is_running:
+                if daas.is_lock:
+                    return Response({"error":_("you are blocked!")},status=status.HTTP_401_UNAUTHORIZED)
                 last_uptime = datetime.datetime.timestamp(daas.last_uptime)
                 now = datetime.datetime.now().timestamp()
                 usage = (now - last_uptime)/60
@@ -190,7 +195,7 @@ class UpdateUsage(ModelViewSet):
                 daas.save()
                 return Response({"info":_("successfully update")},status=status.HTTP_200_OK)
             else:
-                return Response({"error":_("you can't update usage of down desktop!")})
+                return Response({"error":_("you can't update usage of down desktop!")},status=status.HTTP_401_UNAUTHORIZED)
         except:
             logging.error(traceback.format_exc())
             return Response({"error":_("internal server error")},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
