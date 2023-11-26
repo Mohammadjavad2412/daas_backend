@@ -5,7 +5,6 @@ from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from config.models import DaasMetaConfig
 import uuid
-import subprocess
 
 
 class Users(AbstractUser):

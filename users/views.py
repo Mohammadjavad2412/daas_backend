@@ -260,8 +260,6 @@ class LockRequestView(ModelViewSet):
         daas = request.user
         daas.is_lock = True
         Desktop().stop_daas_from_port(daas.http_port)
-        daas = request.user
-        daas.logout()
         daas.save()
         return Response({"info":_("locked account successfully")})
     
