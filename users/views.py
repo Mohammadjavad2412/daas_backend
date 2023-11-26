@@ -95,21 +95,21 @@ class LogInView(APIView):
                         else:
                             return Response({"error":_("invalid username or password")},status=status.HTTP_400_BAD_REQUEST)
                     except:
-                        try:
-                            user = authenticate(request,email=email,password=user_password)
-                            if user and user.is_superuser:
-                                user = Users.objects.get(email=email)
-                                refresh_token = str(RefreshToken.for_user(user))
-                                access_token = str(RefreshToken.for_user(user).access_token)
-                                return Response({"info":_("successfull"),"access_token":access_token,"refresh_token":refresh_token},status=status.HTTP_200_OK)
-                            else:
-                                return Response({"error":_("invalid username or password")},status=status.HTTP_400_BAD_REQUEST)
-                        except:
-                            logging.error(traceback.format_exc())
-                            return Response({"error":_("internal server error")},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                        logging.error(traceback.format_exc())
+                        return Response({"error":_("internal server error")},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             except:
-                logging.error(traceback.format_exc())
-                return Response({"error":_("internal server error")},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                try:
+                    user = authenticate(request,email=email,password=user_password)
+                    if user and user.is_superuser:
+                        user = Users.objects.get(email=email)
+                        refresh_token = str(RefreshToken.for_user(user))
+                        access_token = str(RefreshToken.for_user(user).access_token)
+                        return Response({"info":_("successfull"),"access_token":access_token,"refresh_token":refresh_token},status=status.HTTP_200_OK)
+                    else:
+                        return Response({"error":_("invalid username or password")},status=status.HTTP_400_BAD_REQUEST)
+                except:
+                    logging.error(traceback.format_exc())
+                    return Response({"error":_("internal server error")},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             return Response(serializer_data.errors,status=status.HTTP_400_BAD_REQUEST)
     
