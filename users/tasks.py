@@ -25,31 +25,34 @@ def time_restriction_checker():
     logging.info("time restriction checking...")
     daases = Daas.objects.filter(is_running=True)
     for daas in daases:
-        if daas.time_limit_duration != "PERMANENTLY":
+        if daas.daas_configs.time_limit_duration != "PERMANENTLY":
             allowed = Desktop().check_time_restriction(daas)
             if not allowed:
                 http_port = daas.http_port
                 Desktop().stop_daas_from_port(http_port)
-                daas.is_running=False
-                daas.exceeded_usage = True
-                daas.save()
+                if daas.daas_configs.time_limit_duration == "TEMPORARY":
+                    daas.delete()
+                else:
+                    daas.is_running=False
+                    daas.exceeded_usage = True
+                    daas.save()
             
 @app.task
 def reset_daases_usage():
     logging.info("reset_daases_usage...")
     daases = Daas.objects.all()
     for daas in daases:
-        if daas.time_limit_duration == 'DAILY':
+        if daas.daas_configs.time_limit_duration == 'DAILY':
             daas.usage_in_minute = 0
             daas.exceeded_usage=False
             daas.save()
-        elif daas.time_limit_duration == 'WEEKLY':
+        elif daas.daas_configs.time_limit_duration == 'WEEKLY':
             today = datetime.date.today().weekday()
             if today == 5:
                 daas.usage_in_minute = 0
                 daas.exceeded_usage=False
                 daas.save()
-        elif daas.time_limit_duration == 'MONTHLY':
+        elif daas.daas_configs.time_limit_duration == 'MONTHLY':
             today = JalaliDate.today()
             day = today.day
             if day == 1:

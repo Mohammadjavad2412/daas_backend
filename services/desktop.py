@@ -11,6 +11,7 @@ import socketserver
 import subprocess
 import socket
 import yaml
+import docker
 import json
 
 
@@ -56,14 +57,20 @@ class Desktop:
             random_port = random.choice(free_ports)
         return random_port
         
-    def create_daas_with_credential(self,email,password,http_port=None,https_port=None,image_name="netpardaz/netsep:BaseImage"):
+    def create_daas_with_credential(self,email,password,http_port=None,https_port=None):
+        image = os.getenv("DAAS_DOCKER_IMAGE")
+        version = os.getenv("DAAS_IMAGE_VERSION")
+        image_name = image+":"+version
         if not http_port or not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
         subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'CUSTOM_USER={email}','-e',f'PASSWORD={password}','-e',f'FILE_SERVER_HOST={settings.FILE_SERVER_HOST}','-e',f'MANAGER_HOST={settings.MANEGER_HOST}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",image_name])
         return http_port,https_port
     
-    def create_daas_without_crediential(self,http_port=None,https_port=None,image_name="netpardaz/netsep:BaseImage"):
+    def create_daas_without_crediential(self,http_port=None,https_port=None):
+        image = os.getenv("DAAS_DOCKER_IMAGE")
+        version = os.getenv("DAAS_IMAGE_VERSION")
+        image_name = image+version
         if not http_port or not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
@@ -83,11 +90,14 @@ class Desktop:
         
     def check_time_restriction(self,daas:Daas):
         usage_in_minute = daas.usage_in_minute
-        allowed_usage_in_hour = daas.time_limit_value_in_hour
-        allowed_usage_in_minute = allowed_usage_in_hour * 60
-        if usage_in_minute > allowed_usage_in_minute:
+        allowed_usage_in_hour = daas.daas_configs.time_limit_value_in_hour
+        if allowed_usage_in_hour:
+            allowed_usage_in_minute = allowed_usage_in_hour * 60
+            if usage_in_minute > allowed_usage_in_minute:
+                return False
+            return True
+        else:
             return False
-        return True
     
     def get_container_id_from_port(self,port):
         result = subprocess.check_output(['docker','ps','--filter',f"publish={port}",'--format','{{.ID}}'])
@@ -113,6 +123,22 @@ class Desktop:
         logging.info(f"restart container id:{container_id}")
         subprocess.call(['docker','restart',f'{container_id}'])
         
+    def get_all_containers(self,):
+        cmd = subprocess.check_output(['docker','ps','-a','-q','--filter','ancestor=netpardaz/netsep:latest']) 
+        all_containers = str(cmd.strip().decode('utf-8'))
+        return all_containers
+    
+    def get_tag_of_container(self,container_id):
+        cmd = subprocess.check_output(["docker","inspect","--format","'{{.Config.Image}}'", container_id])
+        image = cmd.strip().decode("utf-8")
+        tag = image.split(":")[-1].split("'")[0]
+        return tag
+        
+    def get_latest_version(self):
+        client = docker.from_env()
+        image = client.images.get(os.getenv("DAAS_DOCKER_IMAGE"))
+        return [tag.split(':')[1] for tag in image.tags]
+    
     # def set_credential(self,container_id,email=None,password=None):
     #     result = subprocess.check_output(['docker','inspect',f'{container_id}'])
     #     verbose_container_id = json.loads(result.strip().decode('utf-8'))[0]['Id']
@@ -183,5 +209,24 @@ class Desktop:
             
         except:
             logging.error(traceback.format_exc())
+            raise exceptions.ValidationError(_('invalid daas'))
+        
+    def update_daas_version(self,container_id,email,password):
+        try:
+            daas = Daas.objects.get(container_id=container_id)
+            self.delete_container(container_id)
+            http_port = daas.http_port
+            https_port = daas.https_port
+            daas.delete()
+            credential_env = os.getenv("DAAS_FORCE_CREDENTIAL")
+            if credential_env.lower()=="false":
+                force_credential = False
+            else:
+                force_credential = True
+            if force_credential:
+                Desktop().create_daas_with_credential(email,password,http_port,https_port)
+            else:
+                Desktop().create_daas_without_crediential(http_port,https_port)
+        except:
             raise exceptions.ValidationError(_('invalid daas'))
         

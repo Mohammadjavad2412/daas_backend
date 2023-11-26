@@ -13,6 +13,7 @@ from users.token import CustomToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import filters
 from rest_framework.permissions import OR
+from drf_writable_nested import WritableNestedModelSerializer
 from services.desktop import Desktop
 from daas.pagination import CustomPagination
 from users.models import Daas,Users
@@ -29,15 +30,16 @@ logging.basicConfig(level=logging.INFO)
 
 class LogInView(APIView):
     
+    throttle_scope = "login"
+    
     def post(self,request):
         data = request.data
         serializer_data = LogInSerializer(data=data)
         if serializer_data.is_valid():
             valid_datas = serializer_data.validated_data
-            is_admin = valid_datas['is_admin']
             email = valid_datas['email']
             user_password = valid_datas['password']
-            if not is_admin:
+            try:
                 authenticator = Keycloak()
                 is_valid_user = authenticator.is_valid_user(email,user_password)
                 if is_valid_user:
@@ -45,14 +47,24 @@ class LogInView(APIView):
                     logging.info(f"user with email: {email} logged in from ip: {ip_address}")
                     config = Config.objects.all().last()
                     daas = Daas.objects.filter(email__iexact=email).last()
+                    latest_tag = os.getenv("DAAS_IMAGE_VERSION")
                     if daas and daas.exceeded_usage == False:
+                        if daas.is_lock:
+                            return Response({"error": _("your account is locked!")},status=status.HTTP_400_BAD_REQUEST)
                         refresh_token = str(CustomToken.for_user(daas))
                         access_token = str(CustomToken.for_user(daas).access_token)
                         http_port = daas.http_port
                         container_id = daas.container_id
-                        Desktop().run_container_by_container_id(container_id)
+                        tag = Desktop().get_tag_of_container(container_id)
+                        if tag == latest_tag:
+                            Desktop().run_container_by_container_id(container_id)
+                        else:
+                            Desktop().update_daas_version(container_id,email,user_password)
+                            container_id = Desktop().get_container_id_from_port(http_port) 
+                            daas.container_id = container_id
                         daas.is_running=True
                         daas.last_uptime=datetime.datetime.now()
+                        daas.daas_version = latest_tag
                         daas.save()
                         return Response({"http":f"http://{config.daas_provider_baseurl}:{daas.http_port}","https":f"https://{config.daas_provider_baseurl}:{daas.https_port}","refresh_token":refresh_token,"access_token":access_token},status.HTTP_200_OK)
                     elif daas and daas.exceeded_usage:
@@ -67,26 +79,27 @@ class LogInView(APIView):
                             http_port,https_port = Desktop().create_daas_with_credential(email,user_password)
                         else:
                             http_port,https_port = Desktop().create_daas_without_crediential()
-                        container_id = Desktop().get_container_id_from_port(http_port)
-                        daas = Daas.objects.create(email=email,http_port=http_port,https_port=https_port,is_running=True,last_uptime=datetime.datetime.now(),container_id=container_id)
+                        container_id = Desktop().get_container_id_from_port(http_port) 
+                        daas = Daas.objects.create(email=email,http_port=http_port,https_port=https_port,is_running=True,last_uptime=datetime.datetime.now(),container_id=container_id,daas_version=latest_tag)
                         refresh_token = str(CustomToken.for_user(daas))
                         access_token = str(CustomToken.for_user(daas).access_token)
                         return Response({"http":f"http://{config.daas_provider_baseurl}:{http_port}","https":f"https://{config.daas_provider_baseurl}:{https_port}","refresh_token":refresh_token,"access_token":access_token},status.HTTP_200_OK)
                 else:
-                    return Response({"error":_("invalid user")},status=status.HTTP_400_BAD_REQUEST)
-            else:
-                try:
-                    user = authenticate(request,email=email,password=user_password)
-                    if user.is_superuser:
-                        user = Users.objects.get(email=email)
-                        refresh_token = str(RefreshToken.for_user(user))
-                        access_token = str(RefreshToken.for_user(user).access_token)
-                        return Response({"info":_("successfull"),"access_token":access_token,"refresh_token":refresh_token},status=status.HTTP_200_OK)
-                    else:
-                        return Response({"error":_("you are not admin")},status=status.HTTP_400_BAD_REQUEST)
-                except:
-                    logging.error(traceback.format_exc())
-                    return Response({"error":_("invalid username or password")},status=status.HTTP_400_BAD_REQUEST)
+                    try:
+                        user = authenticate(request,email=email,password=user_password)
+                        if user and user.is_superuser:
+                            user = Users.objects.get(email=email)
+                            refresh_token = str(RefreshToken.for_user(user))
+                            access_token = str(RefreshToken.for_user(user).access_token)
+                            return Response({"info":_("successfull"),"access_token":access_token,"refresh_token":refresh_token},status=status.HTTP_200_OK)
+                        else:
+                            return Response({"error":_("invalid username or password")},status=status.HTTP_400_BAD_REQUEST)
+                    except:
+                        logging.error(traceback.format_exc())
+                        return Response({"error":_("internal server error")},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            except:
+                logging.error(traceback.format_exc())
+                return Response({"error":_("internal server error")},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             return Response(serializer_data.errors,status=status.HTTP_400_BAD_REQUEST)
     
@@ -221,4 +234,36 @@ class UsersView(ModelViewSet):
     permission_classes = [OnlyAdmin,OnlyOwner]
     authentication_classes = (DaasTokenAuthentication,)
     http_method_names = ['put','patch']
+    
+
+class LockRequestView(ModelViewSet):
+    queryset = Daas.objects.all()
+    authentication_classes = (DaasTokenAuthentication,)
+    http_method_names = ['get']
+    
+    def list(self,request):
+        daas = request.user
+        daas.is_lock = True
+        Desktop().stop_daas_from_port(daas.http_port)
+        daas = request.user
+        daas.logout()
+        daas.save()
+        return Response({"info":_("locked account successfully")})
+    
+    def retrieve(self, request, *args, **kwargs):
+        return Response({"error":_("can't lock account with given id")})
+    
+
+class DeleteAllDesktops(ModelViewSet):
+    queryset = Daas.objects.all()
+    authentication_classes = (DaasTokenAuthentication,)
+    http_method_names = ['get']
+    
+    def list(self, request, *args, **kwargs):
+        Desktop().delete_all_containers()
+        daases = Daas.objects.all().delete()
+        return Response({"info":_("deleted succesfully")})
+    
+    def retrieve(self, request, *args, **kwargs):
+        return Response({"error":_("retrieve method not allowed")})
     

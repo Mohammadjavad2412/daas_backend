@@ -1,14 +1,14 @@
 from rest_framework import serializers
+from drf_writable_nested import WritableNestedModelSerializer
 from users.models import Daas,Users
-from config.models import WhiteListFiles
-from config.serializers import WhiteListFilesSerializer
-from config.models import Config,DaasMetaConfig
+from config.models import Config,WhiteListFiles,DaasMetaConfig
+from config.serializers import DaasMetaConfigSerializer
+import requests
 
 
 class LogInSerializer(serializers.Serializer):
     email = serializers.CharField(required=True,write_only=True)
     password = serializers.CharField(required=True,write_only=True)
-    is_admin = serializers.BooleanField(required=True)
     
     
 class ValidUserSerializer(serializers.Serializer):
@@ -20,13 +20,13 @@ class DaasSerializer(serializers.ModelSerializer):
     allowed_files_type_for_upload = serializers.SerializerMethodField("get_allowed_upload_files_type")
     allowed_files_type_for_download = serializers.SerializerMethodField("get_allowed_download_files_type")
     base_url = serializers.SerializerMethodField('get_base_url')
+    daas_configs = DaasMetaConfigSerializer()
     
     class Meta:
         model = Daas
-        fields = ('id','email','http_port','https_port','can_upload_file','can_download_file','clipboard_up','clipboard_down','webcam_privilege',
-                  'microphone_privilege','time_limit_duration','time_limit_value_in_hour','last_uptime','exceeded_usage','is_running','base_url',
-                  'usage_in_minute','forbidden_upload_files','forbidden_download_files','extra_allowed_upload_files','extra_allowed_download_files',
-                  'allowed_files_type_for_upload','allowed_files_type_for_download','max_transmission_upload_size','max_transmission_download_size')
+        fields = ('id','email','http_port','https_port','last_uptime','exceeded_usage','is_running','base_url',
+                  'usage_in_minute','forbidden_upload_files','forbidden_download_files','extra_allowed_upload_files','daas_version','extra_allowed_download_files',
+                  'allowed_files_type_for_upload','allowed_files_type_for_download','daas_configs','is_lock')
         
     def get_base_url(self,obj):
         return Config.objects.all().first().daas_provider_baseurl
@@ -62,11 +62,18 @@ class DaasSerializer(serializers.ModelSerializer):
         return list(all_allowed_download_file)
     
     
-class UpdateDaasSerializer(serializers.ModelSerializer):
+class UpdateDaasSerializer(WritableNestedModelSerializer,serializers.ModelSerializer):
+    daas_configs = DaasMetaConfigSerializer()
+    
     class Meta:
         model = Daas
-        fields = ['time_limit_duration','time_limit_value_in_hour','can_upload_file','can_download_file','clipboard_up','clipboard_down','webcam_privilege',
-                  'microphone_privilege','forbidden_upload_files','forbidden_download_files','extra_allowed_upload_files','extra_allowed_download_files','max_transmission_upload_size','max_transmission_download_size']
+        fields = ['forbidden_upload_files','forbidden_download_files','extra_allowed_upload_files','extra_allowed_download_files','daas_configs','is_lock']
+        
+    def update(self, instance, validated_data):
+        if 'daas_configs' in validated_data:
+            instance.daas_configs.is_globally_config = False
+        return super().update(instance, validated_data)
+                
                 
 class DaasTokenObtainSerializer(serializers.Serializer):
     email = serializers.CharField()
