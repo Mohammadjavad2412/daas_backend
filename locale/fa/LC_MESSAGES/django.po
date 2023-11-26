@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-25 09:01+0330\n"
+"POT-Creation-Date: 2023-11-26 16:32+0330\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,13 +18,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: config/models.py:17
+#: config/models.py:18 config/models.py:40
 msgid "There is can be only one config instance"
 msgstr "شما فقط میتوانید یک تنظیمات داشته باشید"
-
-#: config/serializers.py:43
-msgid "You are not permitted to set global config with PUT method"
-msgstr "امکان آپدیت کانفیگ به صورت سراسری وجود ندارد"
 
 #: daas/settings.py:157
 msgid "Farsi"
@@ -34,69 +30,85 @@ msgstr "قارسی"
 msgid "English"
 msgstr "انگلیسی"
 
-#: services/desktop.py:186
+#: services/desktop.py:212 services/desktop.py:231
 #, fuzzy
 #| msgid "invalid data passed"
 msgid "invalid daas"
 msgstr "کاربر معتبر نیست"
 
-#: users/models.py:59
-msgid "you don't have meta configuration"
-msgstr "شما هنوز کانفیگی ایجاد تکرده اید"
-
 #: users/views.py:52
 msgid "your account is locked!"
 msgstr "دسکتاپ شما مسدود شده است.با ادمین تماس بگیرید."
 
-#: users/views.py:63
+#: users/views.py:70
 msgid "you reach your time limit!"
 msgstr "زمان استفاده شما از حد مجاز گذشته است"
 
-#: users/views.py:80
-msgid "invalid user"
-msgstr "کاربر معتبر نیست"
-
-#: users/views.py:88 users/views.py:126
+#: users/views.py:93 users/views.py:106 users/views.py:144
 msgid "successfull"
 msgstr "موفق"
 
-#: users/views.py:90
-msgid "you are not admin"
-msgstr "شما ادمین نیستید"
-
-#: users/views.py:93
+#: users/views.py:95 users/views.py:108
 msgid "invalid username or password"
 msgstr "ایمیل یا پسورد اشتباه است"
 
-#: users/views.py:131 users/views.py:153
-msgid "invalid data passed"
-msgstr "کاربر معتبر نیست"
-
-#: users/views.py:172
-msgid "successfully update"
-msgstr "با موفقیت به روز رسانی شد"
-
-#: users/views.py:174
-msgid "you can't update usage of down desktop!"
-msgstr "این دسکتاپ فعال نیست"
-
-#: users/views.py:177 users/views.py:219
+#: users/views.py:98 users/views.py:111 users/views.py:199 users/views.py:241
 msgid "internal server error"
 msgstr "خطای داخلی"
 
-#: users/views.py:193 users/views.py:200
+#: users/views.py:149 users/views.py:173
+msgid "invalid data passed"
+msgstr "کاربر معتبر نیست"
+
+#: users/views.py:168 users/views.py:186
+#, fuzzy
+#| msgid "your account is locked!"
+msgid "you are blocked!"
+msgstr "دسکتاپ شما مسدود شده است.با ادمین تماس بگیرید."
+
+#: users/views.py:194
+msgid "successfully update"
+msgstr "با موفقیت به روز رسانی شد"
+
+#: users/views.py:196
+msgid "you can't update usage of down desktop!"
+msgstr "این دسکتاپ فعال نیست"
+
+#: users/views.py:215 users/views.py:222
 msgid "reset successfully"
 msgstr "با موفقیت به روز رسانی شد"
 
-#: users/views.py:240
+#: users/views.py:262
 #, fuzzy
 #| msgid "reset successfully"
 msgid "locked account successfully"
 msgstr "با موفقیت به روز رسانی شد"
 
-#: users/views.py:243
+#: users/views.py:265
 msgid "can't lock account with given id"
 msgstr "شما نمیتوانید با آیدی امانت را لاک کنید"
+
+#: users/views.py:276
+#, fuzzy
+#| msgid "reset successfully"
+msgid "deleted succesfully"
+msgstr "با موفقیت به روز رسانی شد"
+
+#: users/views.py:279
+msgid "retrieve method not allowed"
+msgstr "این متد مجاز نیست"
+
+#~ msgid "You are not permitted to set global config with PUT method"
+#~ msgstr "امکان آپدیت کانفیگ به صورت سراسری وجود ندارد"
+
+#~ msgid "you don't have meta configuration"
+#~ msgstr "شما هنوز کانفیگی ایجاد تکرده اید"
+
+#~ msgid "invalid user"
+#~ msgstr "کاربر معتبر نیست"
+
+#~ msgid "you are not admin"
+#~ msgstr "شما ادمین نیستید"
 
 #~ msgid "can not connect to file server"
 #~ msgstr "اتصال به فایل سرور امکان پذبر نمی باشد"

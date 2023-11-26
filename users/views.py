@@ -11,10 +11,8 @@ from services.keycloak import Keycloak
 from django.utils.translation import gettext as _
 from users.token import CustomToken
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth.models import AnonymousUser
 from rest_framework import filters
 from rest_framework.permissions import OR
-from drf_writable_nested import WritableNestedModelSerializer
 from services.desktop import Desktop
 from daas.pagination import CustomPagination
 from users.models import Daas,Users
