@@ -5,11 +5,12 @@ import requests
 class Keycloak:
     def __init__(self) -> None:
         config = Config.objects.first()
-        self.host = config.keycloak_base_url
-        self.port = config.keycloak_port
-        self.client_id = config.keycloak_client_id
-        self.client_secret = config.keycloak_secret
-        self.realm_name = config.keycloak_realm
+        if config:
+            self.host = config.keycloak_base_url
+            self.port = config.keycloak_port
+            self.client_id = config.keycloak_client_id
+            self.client_secret = config.keycloak_secret
+            self.realm_name = config.keycloak_realm
         
     def is_valid_user(self,username,password):
         
