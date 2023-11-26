@@ -7,5 +7,5 @@ class Command(BaseCommand):
     def handle(self,*args,**options):
         meta_config = DaasMetaConfig.objects.all()
         if not meta_config:
-            DaasMetaConfig.objects.create()
+            DaasMetaConfig.objects.create(is_globally_config=True)
         

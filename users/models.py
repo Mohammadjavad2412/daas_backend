@@ -14,17 +14,6 @@ class Users(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
-def get_or_create_last_config():
-    try:
-        last_meta_config = DaasMetaConfig.objects.last()
-        if not last_meta_config:
-            last_meta_config = DaasMetaConfig.objects.create()
-    except:
-        subprocess.call(['python3','manage.py','makemigrations','config'])
-        last_meta_config = DaasMetaConfig.objects.create()
-    return last_meta_config
-
-
 class Daas(models.Model):
     
     TIME_CHOICES = (("PERMANENTLY","PERMANENTLY"),("DAILY","DAILY"),("WEEKLY","WEEKLY"),("MONTHLY","MONTHLY"),("TEMPORARY","TEMPORARY"))
@@ -53,7 +42,7 @@ class Daas(models.Model):
             try:
                 latest_configs = DaasMetaConfig.objects.get(is_globally_config=True)
             except:
-                DaasMetaConfig.objects.create()
+                latest_configs = DaasMetaConfig.objects.create(is_globally_config=True)
             self.daas_configs = latest_configs
         super().save(*args,**kwargs)
         
