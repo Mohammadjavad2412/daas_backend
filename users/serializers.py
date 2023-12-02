@@ -94,16 +94,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = Users
         fields = '__all__'
-      
-      
-class ChangePasswordSerializer(serializers.ModelSerializer):
-    email = serializers.CharField(required=True)
-    password = serializers.CharField(write_only=True, required=True)
-    
-    class Meta:
-        model = Users
-        fields = ['email','password']  
-        
+          
     def update(self, instance, validated_data):
         if "password" in validated_data:
             password = validated_data.pop("password")

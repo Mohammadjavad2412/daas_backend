@@ -3,9 +3,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from django.contrib.auth import authenticate
-from users.serializers import LogInSerializer,DaasSerializer,UpdateDaasSerializer,UserSerializer,ValidUserSerializer,ChangePasswordSerializer
+from users.serializers import LogInSerializer,DaasSerializer,UpdateDaasSerializer,UserSerializer,ValidUserSerializer
 from users.handler import DaasTokenAuthentication
-from daas.permissions import OnlyAdmin,OnlyOwner
+from daas.permissions import OnlyAdmin,OnlyOwner,OnlyMetaAdmin
 from rest_framework.viewsets import ModelViewSet
 from services.keycloak import Keycloak
 from django.utils.translation import gettext as _
@@ -18,6 +18,8 @@ from daas.pagination import CustomPagination
 from users.models import Daas,Users
 from config.models import Config
 from utils.fuctions import get_client_ip_address
+from django.contrib.auth import login
+from rest_framework.throttling import UserRateThrottle
 import os
 import subprocess
 import datetime
@@ -29,7 +31,8 @@ logging.basicConfig(level=logging.INFO)
 
 class LogInView(APIView):
     
-    throttle_scope = "login"
+    # throttle_scope = "login"
+    # throttle_classes = [UserRateThrottle]
     
     def post(self,request):
         data = request.data
@@ -90,6 +93,7 @@ class LogInView(APIView):
                             user = Users.objects.get(email=email)
                             refresh_token = str(RefreshToken.for_user(user))
                             access_token = str(RefreshToken.for_user(user).access_token)
+                            login(request,user)
                             return Response({"info":_("successfull"),"access_token":access_token,"refresh_token":refresh_token},status=status.HTTP_200_OK)
                         else:
                             return Response({"error":_("invalid username or password")},status=status.HTTP_400_BAD_REQUEST)
@@ -242,11 +246,11 @@ class IsValidUser(APIView):
         
         
 class UsersView(ModelViewSet):
-    queryset=Users.objects.filter(is_superuser=True)
-    serializer_class = ChangePasswordSerializer
-    permission_classes = [OnlyAdmin,OnlyOwner]
+    
+    queryset=Users.objects.filter()
+    serializer_class = UserSerializer
+    permission_classes = [OnlyMetaAdmin]
     authentication_classes = (DaasTokenAuthentication,)
-    http_method_names = ['put','patch']
     
 
 class LockRequestView(ModelViewSet):
@@ -268,6 +272,7 @@ class LockRequestView(ModelViewSet):
 class DeleteAllDesktops(ModelViewSet):
     queryset = Daas.objects.all()
     authentication_classes = (DaasTokenAuthentication,)
+    permission_classes = [OnlyMetaAdmin,]
     http_method_names = ['get']
     
     def list(self, request, *args, **kwargs):
