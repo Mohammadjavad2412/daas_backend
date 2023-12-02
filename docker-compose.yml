@@ -44,6 +44,9 @@ services:
     environment:
       - KEYCLOAK_ADMIN=admin 
       - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KEYCLOAK_FRONTEND_URL=https://keycloak.npd-co.com/
+      - PROXY_ADDRESS_FORWARDING=true
+      - KC_HOSTNAME=https://keycloak.npd-co.com/
       - KC_HTTP_ENABLED=true
       - KC_HOSTNAME_STRICT=false
       - KC_HOSTNAME_STRICT_HTTPS=false
