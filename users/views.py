@@ -5,7 +5,7 @@ from rest_framework.viewsets import ModelViewSet
 from django.contrib.auth import authenticate
 from users.serializers import LogInSerializer,DaasSerializer,UpdateDaasSerializer,UserSerializer,ValidUserSerializer
 from users.handler import DaasTokenAuthentication
-from daas.permissions import OnlyAdmin,OnlyOwner,OnlyMetaAdmin
+from daas.permissions import OnlyAdmin,OnlyOwner
 from rest_framework.viewsets import ModelViewSet
 from services.keycloak import Keycloak
 from django.utils.translation import gettext as _
