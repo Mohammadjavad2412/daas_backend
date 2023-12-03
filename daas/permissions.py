@@ -17,12 +17,12 @@ class OnlyAdmin(BasePermission):
         except:
             return False
         
-class OnlyMetaAdmin(BasePermission):
-    def has_permission(self, request, view):
-        try:
-            if request.user and request.user.is_meta_admin:
-                return True
-            return False
-        except:
-            return False
+# class OnlyMetaAdmin(BasePermission):
+#     def has_permission(self, request, view):
+#         try:
+#             if request.user and request.user.is_meta_admin:
+#                 return True
+#             return False
+#         except:
+#             return False
         
