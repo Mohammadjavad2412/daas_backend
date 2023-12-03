@@ -19,7 +19,7 @@ from users.models import Daas,Users
 from config.models import Config
 from utils.fuctions import get_client_ip_address
 from django.contrib.auth import login
-from rest_framework.throttling import UserRateThrottle
+import time
 import os
 import subprocess
 import datetime
@@ -81,7 +81,10 @@ class LogInView(APIView):
                             http_port,https_port = Desktop().create_daas_with_credential(email,user_password)
                         else:
                             http_port,https_port = Desktop().create_daas_without_crediential()
+                        time.sleep(2)
+                        print(http_port)
                         container_id = Desktop().get_container_id_from_port(http_port) 
+                        print(container_id)
                         daas = Daas.objects.create(email=email,http_port=http_port,https_port=https_port,is_running=True,last_uptime=datetime.datetime.now(),container_id=container_id,daas_version=latest_tag)
                         refresh_token = str(CustomToken.for_user(daas))
                         access_token = str(CustomToken.for_user(daas).access_token)
