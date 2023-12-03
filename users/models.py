@@ -9,9 +9,11 @@ import uuid
 
 class Users(AbstractUser):
     email = models.CharField(max_length=100,unique=True,null=False)
+    is_meta_admin = models.BooleanField(default=False)
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
+
 
 class Daas(models.Model):
     
