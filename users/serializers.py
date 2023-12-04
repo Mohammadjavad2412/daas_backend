@@ -27,7 +27,7 @@ class DaasSerializer(serializers.ModelSerializer):
         model = Daas
         fields = ('id','email','http_port','https_port','last_uptime','exceeded_usage','is_running','base_url',
                   'usage_in_minute','forbidden_upload_files','forbidden_download_files','extra_allowed_upload_files','daas_version','extra_allowed_download_files',
-                  'allowed_files_type_for_upload','allowed_files_type_for_download','daas_configs','is_lock')
+                  'allowed_files_type_for_upload','allowed_files_type_for_download','daas_configs','is_lock','created_at')
         
     def get_base_url(self,obj):
         return Config.objects.all().first().daas_provider_baseurl
