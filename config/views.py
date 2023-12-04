@@ -38,7 +38,7 @@ class DaasMetaConfigView(ModelViewSet):
         
     
 class WhiteListFilesView(ModelViewSet):
-    queryset = WhiteListFiles.objects.all()
+    queryset = WhiteListFiles.objects.all().order_by('-updated_at')
     serializer_class = WhiteListFilesSerializer
     permission_classes = [OnlyAdmin,]
     pagination_class = CustomPagination

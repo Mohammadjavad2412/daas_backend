@@ -39,7 +39,7 @@ class LogInView(APIView):
         serializer_data = LogInSerializer(data=data)
         if serializer_data.is_valid():
             valid_datas = serializer_data.validated_data
-            email = valid_datas['email']
+            email = str(valid_datas['email']).lower()
             user_password = valid_datas['password']
             try:
                 authenticator = Keycloak()
@@ -81,10 +81,7 @@ class LogInView(APIView):
                             http_port,https_port = Desktop().create_daas_with_credential(email,user_password)
                         else:
                             http_port,https_port = Desktop().create_daas_without_crediential()
-                        time.sleep(2)
-                        print(http_port)
                         container_id = Desktop().get_container_id_from_port(http_port) 
-                        print(container_id)
                         daas = Daas.objects.create(email=email,http_port=http_port,https_port=https_port,is_running=True,last_uptime=datetime.datetime.now(),container_id=container_id,daas_version=latest_tag)
                         refresh_token = str(CustomToken.for_user(daas))
                         access_token = str(CustomToken.for_user(daas).access_token)
