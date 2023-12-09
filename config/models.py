@@ -36,7 +36,7 @@ class DaasMetaConfig(models.Model):
     is_globally_config = models.BooleanField(default=False)
     
     def save(self, *args,**kwargs) -> None:
-        if self.is_globally_config and Config.objects.filter(is_globally_config=True).exists():
+        if not self.pk and self.is_globally_config and DaasMetaConfig.objects.filter(is_globally_config=True).exists():
             raise ValidationError(_('There is can be only one config instance'))
         return super().save(*args,**kwargs)
     
