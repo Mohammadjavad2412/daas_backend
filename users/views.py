@@ -251,6 +251,9 @@ class UsersView(ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [OnlyMetaAdmin]
     authentication_classes = (DaasTokenAuthentication,)
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['email','username']
+    pagination_class = CustomPagination
     
 
 class LockRequestView(ModelViewSet):
