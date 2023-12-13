@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-26 16:32+0330\n"
+"POT-Creation-Date: 2023-12-13 14:49+0330\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -36,65 +36,69 @@ msgstr "انگلیسی"
 msgid "invalid daas"
 msgstr "کاربر معتبر نیست"
 
-#: users/views.py:52
+#: users/views.py:56
 msgid "your account is locked!"
 msgstr "دسکتاپ شما مسدود شده است.با ادمین تماس بگیرید."
 
-#: users/views.py:70
+#: users/views.py:75
 msgid "you reach your time limit!"
 msgstr "زمان استفاده شما از حد مجاز گذشته است"
 
-#: users/views.py:93 users/views.py:106 users/views.py:144
+#: users/views.py:99 users/views.py:112 users/views.py:150
 msgid "successfull"
 msgstr "موفق"
 
-#: users/views.py:95 users/views.py:108
+#: users/views.py:101 users/views.py:114
 msgid "invalid username or password"
 msgstr "ایمیل یا پسورد اشتباه است"
 
-#: users/views.py:98 users/views.py:111 users/views.py:199 users/views.py:241
+#: users/views.py:104 users/views.py:117 users/views.py:205 users/views.py:247
 msgid "internal server error"
 msgstr "خطای داخلی"
 
-#: users/views.py:149 users/views.py:173
+#: users/views.py:155 users/views.py:179
 msgid "invalid data passed"
 msgstr "کاربر معتبر نیست"
 
-#: users/views.py:168 users/views.py:186
+#: users/views.py:174 users/views.py:192
 #, fuzzy
 #| msgid "your account is locked!"
 msgid "you are blocked!"
 msgstr "دسکتاپ شما مسدود شده است.با ادمین تماس بگیرید."
 
-#: users/views.py:194
+#: users/views.py:200
 msgid "successfully update"
 msgstr "با موفقیت به روز رسانی شد"
 
-#: users/views.py:196
+#: users/views.py:202
 msgid "you can't update usage of down desktop!"
 msgstr "این دسکتاپ فعال نیست"
 
-#: users/views.py:215 users/views.py:222
+#: users/views.py:221 users/views.py:228
 msgid "reset successfully"
 msgstr "با موفقیت به روز رسانی شد"
 
-#: users/views.py:262
+#: users/views.py:263
+msgid "you can't delete yourself!"
+msgstr "شما نمی توانید خودتان را حذف کنید"
+
+#: users/views.py:276
 #, fuzzy
 #| msgid "reset successfully"
 msgid "locked account successfully"
 msgstr "با موفقیت به روز رسانی شد"
 
-#: users/views.py:265
+#: users/views.py:279
 msgid "can't lock account with given id"
 msgstr "شما نمیتوانید با آیدی امانت را لاک کنید"
 
-#: users/views.py:276
+#: users/views.py:291
 #, fuzzy
 #| msgid "reset successfully"
 msgid "deleted succesfully"
 msgstr "با موفقیت به روز رسانی شد"
 
-#: users/views.py:279
+#: users/views.py:294
 msgid "retrieve method not allowed"
 msgstr "این متد مجاز نیست"
 

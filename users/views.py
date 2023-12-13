@@ -249,7 +249,7 @@ class IsValidUser(APIView):
         
 class UsersView(ModelViewSet):
     
-    queryset=Users.objects.filter()
+    queryset=Users.objects.filter(is_superuser=True)
     serializer_class = UserSerializer
     permission_classes = [OnlyMetaAdmin]
     authentication_classes = (DaasTokenAuthentication,)
@@ -257,7 +257,15 @@ class UsersView(ModelViewSet):
     search_fields = ['email','username']
     pagination_class = CustomPagination
     
-
+    def perform_create(self, serializer):
+        serializer.save(is_superuser=True)
+        
+    def destroy(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if request.user.email == obj.email:
+            return Response({"error":_("you can't delete yourself!")},status=status.HTTP_400_BAD_REQUEST)
+        return super().destroy(request, *args, **kwargs)
+    
 class LockRequestView(ModelViewSet):
     queryset = Daas.objects.all()
     authentication_classes = (DaasTokenAuthentication,)
