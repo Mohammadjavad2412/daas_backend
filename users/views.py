@@ -49,6 +49,7 @@ class LogInView(APIView):
                     logging.info(f"user with email: {email} logged in from ip: {ip_address}")
                     config = Config.objects.all().last()
                     daas = Daas.objects.filter(email__iexact=email).last()
+                    daas_configs = daas.daas_configs
                     latest_tag = os.getenv("DAAS_IMAGE_VERSION")
                     if daas and daas.exceeded_usage == False:
                         if daas.is_lock:
@@ -64,6 +65,7 @@ class LogInView(APIView):
                             Desktop().update_daas_version(container_id,email,user_password)
                             container_id = Desktop().get_container_id_from_port(http_port) 
                             daas.container_id = container_id
+                            daas.daas_configs = daas_configs
                         daas.is_running=True
                         daas.last_uptime=datetime.datetime.now()
                         daas.daas_version = latest_tag
