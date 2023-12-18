@@ -95,6 +95,15 @@ class UserSerializer(serializers.ModelSerializer):
         model = Users
         fields = '__all__'
         
+    def create(self, validated_data):
+        if "password" in validated_data:
+            user = super().create(validated_data)
+            user.set_password(validated_data['password'])
+            user.save()
+            validated_data.pop("password")
+            return user
+        else:
+            return super().create(validated_data)
           
     def update(self, instance, validated_data):
         if "password" in validated_data:
