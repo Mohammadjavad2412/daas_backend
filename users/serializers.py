@@ -94,6 +94,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = Users
         fields = '__all__'
+        
           
     def update(self, instance, validated_data):
         if "password" in validated_data:
@@ -102,7 +103,5 @@ class UserSerializer(serializers.ModelSerializer):
             if same_password_sent:
                 raise serializers.ValidationError("try another password")
             instance.set_password(password)      
-            return super().update(instance, validated_data)
-        else:
-            raise serializers.ValidationError("password not sent")
-    
+        return super().update(instance, validated_data)
+            

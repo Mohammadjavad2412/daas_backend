@@ -19,7 +19,6 @@ from users.models import Daas,Users
 from config.models import Config
 from utils.fuctions import get_client_ip_address
 from django.contrib.auth import login
-import time
 import os
 import subprocess
 import datetime
