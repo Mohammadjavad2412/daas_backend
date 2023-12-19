@@ -48,7 +48,8 @@ class LogInView(APIView):
                     logging.info(f"user with email: {email} logged in from ip: {ip_address}")
                     config = Config.objects.all().last()
                     daas = Daas.objects.filter(email__iexact=email).last()
-                    daas_configs = daas.daas_configs
+                    if daas:
+                        daas_configs = daas.daas_configs
                     latest_tag = os.getenv("DAAS_IMAGE_VERSION")
                     if daas and daas.exceeded_usage == False:
                         if daas.is_lock:
