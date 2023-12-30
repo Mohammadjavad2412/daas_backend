@@ -3,19 +3,18 @@ from users.models import Daas
 from django.utils.translation import gettext as _
 from rest_framework import exceptions
 from daas import settings
+from services.syslog import SysLog
 import os
 import traceback
 import random
-import logging
 import socketserver
 import subprocess
 import socket
 import yaml
 import docker
-import json
 
 
-logging.basicConfig(level=logging.INFO)
+logger = SysLog().logger
 
 class Desktop:
     
@@ -64,7 +63,7 @@ class Desktop:
         if not http_port or not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
-        subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'CUSTOM_USER={email}','-e',f'PASSWORD={password}','-e',f'FILE_SERVER_HOST={settings.FILE_SERVER_HOST}','-e',f'MANAGER_HOST={settings.MANEGER_HOST}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",image_name])
+        subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'TZ={os.getenv("TIME_ZONE")}','-e',f'CUSTOM_USER={email}','-e',f'PASSWORD={password}','-e',f'FILE_SERVER_HOST={settings.FILE_SERVER_HOST}','-e',f'MANAGER_HOST={settings.MANEGER_HOST}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",image_name])
         return http_port,https_port
     
     def create_daas_without_crediential(self,http_port=None,https_port=None):
@@ -74,7 +73,7 @@ class Desktop:
         if not http_port or not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
-        subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'FILE_SERVER_HOST={settings.FILE_SERVER_HOST}','-e',f'MANAGER_HOST={settings.MANEGER_HOST}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",'-v','- /var/run/docker.sock:/var/run/docker.sock','--device','/dev/dri',image_name])
+        subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'TZ={os.getenv("TIME_ZONE")}','-e',f'FILE_SERVER_HOST={settings.FILE_SERVER_HOST}','-e',f'MANAGER_HOST={settings.MANEGER_HOST}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",'-v','- /var/run/docker.sock:/var/run/docker.sock','--device','/dev/dri',image_name])
         return http_port,https_port
     
     def get_image_by_access(self,access_type):
@@ -105,10 +104,11 @@ class Desktop:
         return container_id
     
     def run_container_by_container_id(self,container_id):
+        logger.info(f"run container: {container_id}")
         subprocess.call(['docker','start',f'{container_id}'])
         
     def delete_container(self,container_id):
-        logging.info(f"delete container id:{container_id}")
+        logger.info(f"delete container id:{container_id}")
         subprocess.call(['docker','stop',f'{container_id}'])
         subprocess.call(['docker','rm',f'{container_id}'])
         
@@ -120,7 +120,7 @@ class Desktop:
         return email,password
     
     def restart_daas(self,container_id):
-        logging.info(f"restart container id:{container_id}")
+        logger.info(f"restart container id:{container_id}")
         subprocess.call(['docker','restart',f'{container_id}'])
         
     def get_all_containers(self,):
@@ -160,7 +160,7 @@ class Desktop:
     #             config_file.write(new_config_file)
     #             config_file.close()
     #     except:
-    #         logging.error(traceback.format_exc())
+    #         logger.error(traceback.format_exc())
             
     def handle_file_transmition_access(self,container_id,upload_access_mode,download_access_mode):
         pass
@@ -180,7 +180,7 @@ class Desktop:
             subprocess.call(['docker','exec',f'{container_id}','rm',f'/usr/local/share/kasmvnc/{container_id}.yml'])
             os.remove(f"{BASE_DIR}/temp_configs/{container_id}.yml")
         except:
-            logging.error(traceback.format_exc())
+            logger.error(traceback.format_exc())
                 
     def update_container_with_new_access(self,container_id,validated_data):
         try:
@@ -208,11 +208,12 @@ class Desktop:
             self.restart_daas(container_id)
             
         except:
-            logging.error(traceback.format_exc())
+            logger.error(traceback.format_exc())
             raise exceptions.ValidationError(_('invalid daas'))
         
     def update_daas_version(self,container_id,email,password):
         try:
+            logger.info(f"update daas for user {email}")
             daas = Daas.objects.get(container_id=container_id)
             self.delete_container(container_id)
             http_port = daas.http_port

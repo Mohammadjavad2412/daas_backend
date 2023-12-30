@@ -219,7 +219,7 @@ CELERY_BEAT_SCHEDULE = {
 FILE_SERVER_HOST = os.getenv("FILE_SERVER_HOST")
 MANEGER_HOST = os.getenv("MANEGER_HOST")
 
-TIME_ZONE = 'Asia/Tehran'
+TIME_ZONE = os.getenv("TIME_ZONE")
 
 if MODE:
     if MODE.lower()=="production" or MODE.lower()=='prod':
