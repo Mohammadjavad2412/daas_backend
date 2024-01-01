@@ -12,6 +12,9 @@ class Config(models.Model):
     keycloak_secret = models.CharField(null=False,blank=False,max_length=200)
     keycloak_realm = models.CharField(null=False,blank=False,max_length=100)
     daas_provider_baseurl = models.CharField(max_length=200,null=True,default="localhost")
+    log_server_ip = models.CharField(max_length=200,null=False,blank=False,default='localhost')
+    log_server_port = models.PositiveIntegerField(null=False,blank=False,default=514)
+    
     
     def save(self, *args, **kwargs):
         if not self.pk and Config.objects.exists():

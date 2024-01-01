@@ -1,3 +1,4 @@
+from config.models import Config
 import logging
 import logging.handlers
 import os
@@ -8,8 +9,8 @@ class SysLog():
         self.logger = logging.getLogger()
         has_log_server = os.getenv("HAS_LOG_SERVER")
         if has_log_server.lower()=="true":
-            log_server_ip = os.getenv("LOG_SERVER_IP")
-            log_server_port = int(os.getenv("LOG_SERVER_PORT"))
+            log_server_ip = Config.objects.all().last().log_server_ip
+            log_server_port = Config.objects.all().last().log_server_port
             self.handler = logging.handlers.SysLogHandler(address=(log_server_ip,log_server_port))
             self.logger.addHandler(self.handler)
         self.logger.setLevel(logging.INFO)
