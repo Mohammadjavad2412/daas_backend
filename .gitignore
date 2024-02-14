@@ -6,3 +6,5 @@ migrations
 static
 celerybeat-schedule
 temp_configs/*
+daas_backup
+secrets

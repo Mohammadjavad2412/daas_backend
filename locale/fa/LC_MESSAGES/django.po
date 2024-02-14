@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-13 14:49+0330\n"
+"POT-Creation-Date: 2024-02-13 14:27+0330\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: config/models.py:18 config/models.py:40
+#: config/models.py:21 config/models.py:43
 msgid "There is can be only one config instance"
 msgstr "شما فقط میتوانید یک تنظیمات داشته باشید"
 
@@ -30,77 +30,84 @@ msgstr "قارسی"
 msgid "English"
 msgstr "انگلیسی"
 
-#: services/desktop.py:212 services/desktop.py:231
+#: services/desktop.py:199 services/desktop.py:219
 #, fuzzy
 #| msgid "invalid data passed"
 msgid "invalid daas"
 msgstr "کاربر معتبر نیست"
 
-#: users/views.py:56
+#: users/views.py:68
+msgid "This desktop is using by other user!!"
+msgstr "این دسکتاپ توسط شخص دیگری در حال استفاده است"
+
+#: users/views.py:70
 msgid "your account is locked!"
 msgstr "دسکتاپ شما مسدود شده است.با ادمین تماس بگیرید."
 
-#: users/views.py:75
+#: users/views.py:97
 msgid "you reach your time limit!"
 msgstr "زمان استفاده شما از حد مجاز گذشته است"
 
-#: users/views.py:99 users/views.py:112 users/views.py:150
+#: users/views.py:122 users/views.py:139 users/views.py:179
 msgid "successfull"
 msgstr "موفق"
 
-#: users/views.py:101 users/views.py:114
+#: users/views.py:124 users/views.py:141
 msgid "invalid username or password"
 msgstr "ایمیل یا پسورد اشتباه است"
 
-#: users/views.py:104 users/views.py:117 users/views.py:205 users/views.py:247
+#: users/views.py:127 users/views.py:144 users/views.py:236 users/views.py:282
 msgid "internal server error"
 msgstr "خطای داخلی"
 
-#: users/views.py:155 users/views.py:179
+#: users/views.py:184 users/views.py:210
 msgid "invalid data passed"
 msgstr "کاربر معتبر نیست"
 
-#: users/views.py:174 users/views.py:192
+#: users/views.py:205 users/views.py:223
 #, fuzzy
 #| msgid "your account is locked!"
 msgid "you are blocked!"
 msgstr "دسکتاپ شما مسدود شده است.با ادمین تماس بگیرید."
 
-#: users/views.py:200
+#: users/views.py:231
 msgid "successfully update"
 msgstr "با موفقیت به روز رسانی شد"
 
-#: users/views.py:202
+#: users/views.py:233
 msgid "you can't update usage of down desktop!"
 msgstr "این دسکتاپ فعال نیست"
 
-#: users/views.py:221 users/views.py:228
+#: users/views.py:254 users/views.py:263
 msgid "reset successfully"
 msgstr "با موفقیت به روز رسانی شد"
 
-#: users/views.py:263
+#: users/views.py:314
 msgid "you can't delete yourself!"
 msgstr "شما نمی توانید خودتان را حذف کنید"
 
-#: users/views.py:276
+#: users/views.py:329
 #, fuzzy
 #| msgid "reset successfully"
 msgid "locked account successfully"
 msgstr "با موفقیت به روز رسانی شد"
 
-#: users/views.py:279
+#: users/views.py:332
 msgid "can't lock account with given id"
 msgstr "شما نمیتوانید با آیدی امانت را لاک کنید"
 
-#: users/views.py:291
-#, fuzzy
-#| msgid "reset successfully"
-msgid "deleted succesfully"
-msgstr "با موفقیت به روز رسانی شد"
+#~ msgid ""
+#~ "This desktop is open with other user, you should wait about {2*int(os."
+#~ "getenv('CELERY_PERIODIC_TASK_TIME'))} seconds !!"
+#~ msgstr "این دسکتاپ توسط شخص دیگری باز است"
 
-#: users/views.py:294
-msgid "retrieve method not allowed"
-msgstr "این متد مجاز نیست"
+#, fuzzy
+#~| msgid "reset successfully"
+#~ msgid "deleted succesfully"
+#~ msgstr "با موفقیت به روز رسانی شد"
+
+#~ msgid "retrieve method not allowed"
+#~ msgstr "این متد مجاز نیست"
 
 #~ msgid "You are not permitted to set global config with PUT method"
 #~ msgstr "امکان آپدیت کانفیگ به صورت سراسری وجود ندارد"

@@ -23,7 +23,7 @@ class Keycloak:
             "username":username,
             "password":password
         }
-        token_response = requests.post(token_url, data=token_data)
+        token_response = requests.post(token_url, data=token_data,timeout=5)
         if token_response.status_code == 200:
             return True
         return False

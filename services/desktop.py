@@ -1,6 +1,7 @@
 from daas.settings import BASE_DIR
 from users.models import Daas
 from django.utils.translation import gettext as _
+from django.db.models import Q
 from rest_framework import exceptions
 from daas import settings
 from services.syslog import SysLog
@@ -49,11 +50,14 @@ class Desktop:
         return free_ports
 
     def random_free_port(self):
-        start_port = 30000
-        end_port = 31000
+        start_port = int(os.getenv("DAAS_START_PORT"))
+        end_port = int(os.getenv("DAAS_END_PORT"))
         free_ports = self.find_free_ports(start_port, end_port)
         if free_ports:
             random_port = random.choice(free_ports)
+            has_used = Daas.objects.filter(Q(http_port=random_port)| Q(https_port=random_port))
+            if has_used:
+                return self.random_free_port()
         return random_port
         
     def create_daas_with_credential(self,email,password,http_port=None,https_port=None):
@@ -63,7 +67,13 @@ class Desktop:
         if not http_port or not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
-        subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'TZ={os.getenv("TIME_ZONE")}','-e',f'CUSTOM_USER={email}','-e',f'PASSWORD={password}','-e',f'FILE_SERVER_HOST={settings.FILE_SERVER_HOST}','-e',f'MANAGER_HOST={settings.MANEGER_HOST}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",image_name])
+        subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'TZ={os.getenv("TIME_ZONE")}','-e',f'CUSTOM_USER={email}',
+                         '-e',f'PASSWORD={password}','-e',f'FILE_SERVER_HOST={settings.FILE_SERVER_HOST}',
+                         '-e',f'MANAGER_HOST={settings.MANEGER_HOST}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",
+                         '--device','/dev/dri:/dev/dri', # mount gpu driver
+                         '--shm-size=3gb', # shared memory
+                         '--security-opt','seccomp=unconfined', # set security option
+                         image_name])
         return http_port,https_port
     
     def create_daas_without_crediential(self,http_port=None,https_port=None):
@@ -73,15 +83,15 @@ class Desktop:
         if not http_port or not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
-        subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'TZ={os.getenv("TIME_ZONE")}','-e',f'FILE_SERVER_HOST={settings.FILE_SERVER_HOST}','-e',f'MANAGER_HOST={settings.MANEGER_HOST}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",'-v','- /var/run/docker.sock:/var/run/docker.sock','--device','/dev/dri',image_name])
+        subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'TZ={os.getenv("TIME_ZONE")}',
+                            '-e',f'FILE_SERVER_HOST={settings.FILE_SERVER_HOST}',
+                            '-e',f'MANAGER_HOST={settings.MANEGER_HOST}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",
+                            '--device','/dev/dri:/dev/dri', # mount gpu driver
+                            '--shm-size=3gb', # shared memory
+                            '--security-opt','seccomp=unconfined', # set security option
+                            image_name])                         
         return http_port,https_port
-    
-    def get_image_by_access(self,access_type):
-        if access_type == "NO_ACCESS":
-            return "netpardaz/netsep:noUpload"
-        elif access_type == "HAS_ACCESS":
-            return "netpardaz/netsep:canUpload"
-        
+            
     def stop_daas_from_port(self,port):
         result = subprocess.check_output(['docker','ps','--filter',f"publish={port}",'--format','{{.ID}}'])
         container_id = str(result.strip().decode('utf-8'))
@@ -138,29 +148,6 @@ class Desktop:
         client = docker.from_env()
         image = client.images.get(os.getenv("DAAS_DOCKER_IMAGE"))
         return [tag.split(':')[1] for tag in image.tags]
-    
-    # def set_credential(self,container_id,email=None,password=None):
-    #     result = subprocess.check_output(['docker','inspect',f'{container_id}'])
-    #     verbose_container_id = json.loads(result.strip().decode('utf-8'))[0]['Id']
-    #     try:
-    #         with open(f"/var/lib/docker/containers/{verbose_container_id}/config.v2.json") as config_file:
-    #             new_config = json.load(config_file)
-    #             envs = list(new_config['Config']['Env'])
-    #             for env in envs:
-    #                 if str(env).startswith("CUSTOM_USER"):
-    #                     email_index = envs.index(env)
-    #                     envs[email_index] = f"CUSTOM_USER=ali"
-    #                 if str(env).startswith("PASSWORD"):
-    #                     password_index = envs.index(env)
-    #                     envs[password_index] = f"PASSWORD=ali"
-    #             new_config['Config']['Env'] = envs
-    #             new_config_file = json.dump(new_config)
-    #             config_file.close()
-    #         with open(f"/var/lib/docker/containers/{verbose_container_id}/config.v2.json","+w") as config_file:
-    #             config_file.write(new_config_file)
-    #             config_file.close()
-    #     except:
-    #         logger.error(traceback.format_exc())
             
     def handle_file_transmition_access(self,container_id,upload_access_mode,download_access_mode):
         pass

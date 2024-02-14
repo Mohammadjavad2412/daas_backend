@@ -31,12 +31,12 @@ logger = SysLog().logger
 
 class LogInView(APIView):
     
-    # throttle_scope = "login"
-    # throttle_classes = [UserRateThrottle]
+    throttle_scope = "login"
     
     def post(self,request):
         data = request.data
         serializer_data = LogInSerializer(data=data)
+        ip_address = str(get_client_ip_address(request))
         if serializer_data.is_valid():
             valid_datas = serializer_data.validated_data
             email = str(valid_datas['email']).lower()
@@ -44,7 +44,6 @@ class LogInView(APIView):
             try:
                 authenticator = Keycloak()
                 is_valid_user = authenticator.is_valid_user(email,user_password)
-                ip_address = get_client_ip_address(request)
                 if is_valid_user:
                     logger.info(f"user with email: {email} logged in from ip: {ip_address}")
                     config = Config.objects.all().last()
@@ -55,10 +54,18 @@ class LogInView(APIView):
                         forbidden_upload_files = daas.forbidden_upload_files
                         forbidden_download_files = daas.forbidden_download_files
                         extra_allowed_upload_files = daas.extra_allowed_upload_files
+                        last_login_ip = daas.last_login_ip
                         extra_allowed_download_files = daas.extra_allowed_download_files
                         is_lock = daas.is_lock
                     latest_tag = os.getenv("DAAS_IMAGE_VERSION")
                     if daas and daas.exceeded_usage == False:
+                        if daas.is_running:
+                            last_uptime = daas.last_uptime
+                            now = datetime.datetime.now()
+                            delta_time = now - datetime.timedelta(2*int(os.getenv("CELERY_PERIODIC_TASK_TIME")))
+                            if last_uptime > delta_time:
+                                if ip_address != daas.last_login_ip:
+                                    return Response({'error':_(f"This desktop is using by other user!!")},status=status.HTTP_400_BAD_REQUEST)
                         if daas.is_lock:
                             return Response({"error": _("your account is locked!")},status=status.HTTP_400_BAD_REQUEST)
                         refresh_token = str(CustomToken.for_user(daas))
@@ -78,10 +85,12 @@ class LogInView(APIView):
                             daas.forbidden_download_files = forbidden_download_files
                             daas.extra_allowed_upload_files = extra_allowed_upload_files
                             daas.extra_allowed_download_files = extra_allowed_download_files
+                            daas.last_login_ip = last_login_ip
                             daas.is_lock = is_lock
                         daas.is_running=True
                         daas.last_uptime=datetime.datetime.now()
                         daas.daas_version = latest_tag
+                        daas.last_login_ip = ip_address
                         daas.save()
                         return Response({"http":f"http://{config.daas_provider_baseurl}:{daas.http_port}","https":f"https://{config.daas_provider_baseurl}:{daas.https_port}","refresh_token":refresh_token,"access_token":access_token},status.HTTP_200_OK)
                     elif daas and daas.exceeded_usage:
@@ -97,7 +106,7 @@ class LogInView(APIView):
                         else:
                             http_port,https_port = Desktop().create_daas_without_crediential()
                         container_id = Desktop().get_container_id_from_port(http_port) 
-                        daas = Daas.objects.create(email=email,http_port=http_port,https_port=https_port,is_running=True,last_uptime=datetime.datetime.now(),container_id=container_id,daas_version=latest_tag)
+                        daas = Daas.objects.create(email=email,http_port=http_port,https_port=https_port,is_running=True,last_uptime=datetime.datetime.now(),container_id=container_id,daas_version=latest_tag,last_login_ip=ip_address)
                         refresh_token = str(CustomToken.for_user(daas))
                         access_token = str(CustomToken.for_user(daas).access_token)
                         return Response({"http":f"http://{config.daas_provider_baseurl}:{http_port}","https":f"https://{config.daas_provider_baseurl}:{https_port}","refresh_token":refresh_token,"access_token":access_token},status.HTTP_200_OK)
@@ -117,8 +126,22 @@ class LogInView(APIView):
                         logger.error(traceback.format_exc())
                         return Response({"error":_("internal server error")},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             except:
-                logger.error(traceback.format_exc())
-                return Response({"error":_("internal server error")},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+                # used when no authentication set or handle
+                try:
+                    user = authenticate(request,email=email,password=user_password)
+                    if user and user.is_superuser:
+                        logger.info(f"an admin with email: {email} logged in from ip: {ip_address}")
+                        user = Users.objects.get(email=email)
+                        refresh_token = str(RefreshToken.for_user(user))
+                        access_token = str(RefreshToken.for_user(user).access_token)
+                        login(request,user)
+                        return Response({"info":_("successfull"),"access_token":access_token,"refresh_token":refresh_token},status=status.HTTP_200_OK)
+                    else:
+                        return Response({"error":_("invalid username or password")},status=status.HTTP_400_BAD_REQUEST)
+                except:
+                    logger.error(traceback.format_exc())
+                    return Response({"error":_("internal server error")},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             return Response(serializer_data.errors,status=status.HTTP_400_BAD_REQUEST)
     
