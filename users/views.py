@@ -64,7 +64,7 @@ class LogInView(APIView):
                             now = datetime.datetime.now()
                             delta_time = now - datetime.timedelta(2*int(os.getenv("CELERY_PERIODIC_TASK_TIME")))
                             if last_uptime > delta_time:
-                                if ip_address != daas.last_login_ip:
+                                if ip_address != daas.last_login_ip or ip_address != os.getenv("FILE_SERVER_HOST"):
                                     return Response({'error':_(f"This desktop is using by other user!!")},status=status.HTTP_400_BAD_REQUEST)
                         if daas.is_lock:
                             return Response({"error": _("your account is locked!")},status=status.HTTP_400_BAD_REQUEST)
@@ -85,8 +85,9 @@ class LogInView(APIView):
                             daas.forbidden_download_files = forbidden_download_files
                             daas.extra_allowed_upload_files = extra_allowed_upload_files
                             daas.extra_allowed_download_files = extra_allowed_download_files
+                        if ip_address != os.getenv("FILE_SERVER_HOST"):
                             daas.last_login_ip = last_login_ip
-                            daas.is_lock = is_lock
+                        daas.is_lock = is_lock
                         daas.is_running=True
                         daas.last_uptime=datetime.datetime.now()
                         daas.daas_version = latest_tag
@@ -155,6 +156,12 @@ class DaasView(ModelViewSet):
     search_fields = ['email',]
     pagination_class = CustomPagination
     http_method_name=['get','patch','delete','option','head']
+    
+    
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        response.data['online_users'] = Daas.objects.filter(is_running=True).count()
+        return response
     
     def get_serializer_class(self):
         if self.action == 'update' or self.action == 'partial_update':
