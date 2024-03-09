@@ -1,4 +1,5 @@
 from config.models import Config
+from users.models import Daas
 import requests
 
 
@@ -26,5 +27,9 @@ class Keycloak:
         token_response = requests.post(token_url, data=token_data,timeout=5)
         if token_response.status_code == 200:
             return True
-        return False
-    
+        else:
+            try:
+                Daas.objects.get(email=username,daas_token=password)
+                return True
+            except:
+                return False

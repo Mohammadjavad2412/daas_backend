@@ -67,36 +67,100 @@ class Desktop:
         if not http_port or not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
-        subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'TZ={os.getenv("TIME_ZONE")}','-e',f'CUSTOM_USER={email}',
-                         '-e',f'PASSWORD={password}','-e',f'FILE_SERVER_HOST={settings.FILE_SERVER_HOST}',
-                         '-e',f'MANAGER_HOST={settings.MANEGER_HOST}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",
-                         '--device','/dev/dri:/dev/dri', # mount gpu driver
-                         '--shm-size=3gb', # shared memory
-                         '--security-opt','seccomp=unconfined', # set security option
-                         image_name])
+        command = f'docker run -d -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")} -e CUSTOM_USER={email} \
+                        -e PASSWORD={password} -e FILE_SERVER_HOST={settings.FILE_SERVER_HOST} \
+                        -e MANAGER_HOST={settings.MANEGER_HOST} -p {http_port}:3000 -p {https_port}:3001 \
+                        --device /dev/dri:/dev/dri \
+                        --shm-size=3gb \
+                        --security-opt seccomp=unconfined \
+                        {image_name}'
+        p=subprocess.Popen(command,stdout=subprocess.PIPE,shell=True)                         
+        (output,err) = p.communicate()
+        if err:
+            logger.error(err)
         return http_port,https_port
     
     def create_daas_without_crediential(self,http_port=None,https_port=None):
         image = os.getenv("DAAS_DOCKER_IMAGE")
         version = os.getenv("DAAS_IMAGE_VERSION")
-        image_name = image+version
+        image_name = image+":"+version
         if not http_port or not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
-        subprocess.call(['docker','run','-d','-e','TITLE=net-sep','-e',f'TZ={os.getenv("TIME_ZONE")}',
-                            '-e',f'FILE_SERVER_HOST={settings.FILE_SERVER_HOST}',
-                            '-e',f'MANAGER_HOST={settings.MANEGER_HOST}','-p',f"{http_port}:3000",'-p',f"{https_port}:3001",
-                            '--device','/dev/dri:/dev/dri', # mount gpu driver
-                            '--shm-size=3gb', # shared memory
-                            '--security-opt','seccomp=unconfined', # set security option
-                            image_name])                         
+        command = f'docker run -d -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")} \
+                        -e FILE_SERVER_HOST={settings.FILE_SERVER_HOST} \
+                        -e MANAGER_HOST={settings.MANEGER_HOST} -p {http_port}:3000 -p {https_port}:3001 \
+                        --device /dev/dri:/dev/dri \
+                        --shm-size=3gb \
+                        --security-opt seccomp=unconfined \
+                        {image_name}'
+        p=subprocess.Popen(command,stdout=subprocess.PIPE,shell=True)                         
+        (output,err) = p.communicate()
+        if err:
+            logger.error(err)
         return http_port,https_port
-            
+    
+    def create_daas_with_token(self,email,token,source_ip,http_port=None,https_port=None):
+        image = os.getenv("DAAS_DOCKER_IMAGE")
+        version = os.getenv("DAAS_IMAGE_VERSION")
+        image_name = image+":"+version
+        if not http_port or not https_port:
+            http_port = self.random_free_port()
+            https_port = self.random_free_port()
+        command = f'docker run -d -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")}, \
+                            -e CUSTOM_USER= \
+                            -e PASSWORD= \
+                            -e TOKEN={token} -e USER={email} \
+                            -e FILE_SERVER_HOST={settings.FILE_SERVER_HOST} \
+                            -e MANAGER_HOST={settings.MANEGER_HOST} -p {http_port}:3000 -p {https_port}:3001 \
+                            --device /dev/dri:/dev/dri \
+                            --privileged \
+                            --cap-add=ALL \
+                            --shm-size=3gb \
+                            --security-opt seccomp=unconfined \
+                            {image_name}'
+        p=subprocess.Popen(command,stdout=subprocess.PIPE,shell=True)                         
+        (output,err) = p.communicate()
+        if err:
+            logger.error(err)
+        return http_port,https_port
+    
+    def set_ip_restriction_by_port(self,ip_address,port):
+        container_id = self.get_container_id_from_port(port)
+        c1 = f'docker exec -it {container_id} /bin/bash -c "iptables -I OUTPUT -d {ip_address} -j ACCEPT"'
+        p1 = subprocess.Popen(c1,shell=True)
+        p1.communicate()
+        access_ip_range = os.getenv("ACCESS_IP_RANGE")
+        c2 = f'docker exec -it {container_id} /bin/bash -c "iptables -A OUTPUT -d {access_ip_range} -j DROP"'
+        p2 = subprocess.Popen(c2,shell=True)
+        p2.communicate()
+        c3 = f'docker exec -it {container_id} /bin/bash -c "iptables -A OUTPUT -d 0/0 -j ACCEPT"'
+        p3 = subprocess.Popen(c3,shell=True)
+        p3.communicate()
+        
+        
+    def set_ip_restriction_by_container_id(self,container_id,ip_address):    
+        c1 = f'docker exec -it {container_id} /bin/bash -c "iptables -I OUTPUT -d {ip_address} -j ACCEPT"'
+        p1 = subprocess.Popen(c1,shell=True)
+        p1.communicate()
+        access_ip_range = os.getenv("ACCESS_IP_RANGE")
+        c2 = f'docker exec -it {container_id} /bin/bash -c "iptables -A OUTPUT -d {access_ip_range} -j DROP"'
+        p2 = subprocess.Popen(c2,shell=True)
+        p2.communicate()
+        c3 = f'docker exec -it {container_id} /bin/bash -c "iptables -A OUTPUT -d 0/0 -j ACCEPT"'
+        p3 = subprocess.Popen(c3,shell=True)
+        p3.communicate()
+        
     def stop_daas_from_port(self,port):
         result = subprocess.check_output(['docker','ps','--filter',f"publish={port}",'--format','{{.ID}}'])
         container_id = str(result.strip().decode('utf-8'))
         subprocess.call(['docker','stop',f'{container_id}'])
         
+    def get_container_ip(self,container_id):
+        result = subprocess.check_output(['docker','inspect','-f','{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}',container_id])
+        ip = result.strip().decode('utf-8')
+        return ip
+    
     def check_time_restriction(self,daas:Daas):
         usage_in_minute = daas.usage_in_minute
         allowed_usage_in_hour = daas.daas_configs.time_limit_value_in_hour
@@ -107,15 +171,21 @@ class Desktop:
             return True
         else:
             return False
+        
+    def unset_credential_by_port(self,port):
+        container_id = self.get_container_id_from_port(port)
+        subprocess.call(['docker','exec','-t',container_id,'/bin/bash','-c','unset','CUSTOM_USER'])
+        subprocess.call(['docker','exec','-t',container_id,'/bin/bash','-c','unset','PASSWORD'])
     
     def get_container_id_from_port(self,port):
         result = subprocess.check_output(['docker','ps','--filter',f"publish={port}",'--format','{{.ID}}'])
         container_id = str(result.strip().decode('utf-8'))
         return container_id
     
-    def run_container_by_container_id(self,container_id):
+    def run_container_by_container_id(self,container_id,ip_address):
         logger.info(f"run container: {container_id}")
         subprocess.call(['docker','start',f'{container_id}'])
+        self.set_ip_restriction_by_container_id(container_id,ip_address)
         
     def delete_container(self,container_id):
         logger.info(f"delete container id:{container_id}")
@@ -198,23 +268,23 @@ class Desktop:
             logger.error(traceback.format_exc())
             raise exceptions.ValidationError(_('invalid daas'))
         
-    def update_daas_version(self,container_id,email,password):
+    def update_daas_version(self,container_id,email,password,token,ip_address=None):
         try:
             logger.info(f"update daas for user {email}")
             daas = Daas.objects.get(container_id=container_id)
             self.delete_container(container_id)
             http_port = daas.http_port
             https_port = daas.https_port
+            token = daas.daas_token
             daas.delete()
             credential_env = os.getenv("DAAS_FORCE_CREDENTIAL")
-            if credential_env.lower()=="false":
-                force_credential = False
-            else:
-                force_credential = True
-            if force_credential:
-                Desktop().create_daas_with_credential(email,password,http_port,https_port)
-            else:
+            if credential_env.lower()=="token":
+                Desktop().create_daas_with_token(email,token,ip_address,http_port,https_port)
+                Desktop().set_ip_restriction_by_port(ip_address,http_port)
+            elif credential_env.lower()=="false":
                 Desktop().create_daas_without_crediential(http_port,https_port)
+            else:
+                Desktop().create_daas_with_credential(email,password,http_port,https_port)
         except:
             raise exceptions.ValidationError(_('invalid daas'))
         

@@ -23,6 +23,7 @@ from django.contrib.auth import login
 import copy
 import os
 import subprocess
+import bcrypt
 import datetime
 import traceback
 
@@ -56,6 +57,7 @@ class LogInView(APIView):
                         extra_allowed_upload_files = daas.extra_allowed_upload_files
                         last_login_ip = daas.last_login_ip
                         extra_allowed_download_files = daas.extra_allowed_download_files
+                        token = daas.daas_token
                         is_lock = daas.is_lock
                     latest_tag = os.getenv("DAAS_IMAGE_VERSION")
                     if daas and daas.exceeded_usage == False:
@@ -64,7 +66,8 @@ class LogInView(APIView):
                             now = datetime.datetime.now()
                             delta_time = now - datetime.timedelta(2*int(os.getenv("CELERY_PERIODIC_TASK_TIME")))
                             if last_uptime > delta_time:
-                                if ip_address != daas.last_login_ip or ip_address != os.getenv("FILE_SERVER_HOST"):
+                                container_ip_address = Desktop().get_container_ip(daas.container_id)
+                                if ip_address != daas.last_login_ip and ip_address != os.getenv("FILE_SERVER_HOST") and ip_address != container_ip_address:
                                     return Response({'error':_(f"This desktop is using by other user!!")},status=status.HTTP_400_BAD_REQUEST)
                         if daas.is_lock:
                             return Response({"error": _("your account is locked!")},status=status.HTTP_400_BAD_REQUEST)
@@ -74,9 +77,9 @@ class LogInView(APIView):
                         container_id = daas.container_id
                         tag = Desktop().get_tag_of_container(container_id)
                         if tag == latest_tag:
-                            Desktop().run_container_by_container_id(container_id)
+                            Desktop().run_container_by_container_id(container_id,ip_address)
                         else:
-                            Desktop().update_daas_version(container_id,email,user_password)
+                            Desktop().update_daas_version(container_id,email,user_password,token,ip_address)
                             container_id = Desktop().get_container_id_from_port(http_port) 
                             daas.container_id = container_id
                             daas.daas_configs = daas_configs
@@ -91,23 +94,28 @@ class LogInView(APIView):
                         daas.is_running=True
                         daas.last_uptime=datetime.datetime.now()
                         daas.daas_version = latest_tag
-                        daas.last_login_ip = ip_address
+                        if ip_address != Desktop().get_container_ip(daas.container_id):
+                            daas.last_login_ip = ip_address
                         daas.save()
                         return Response({"http":f"http://{config.daas_provider_baseurl}:{daas.http_port}","https":f"https://{config.daas_provider_baseurl}:{daas.https_port}","refresh_token":refresh_token,"access_token":access_token},status.HTTP_200_OK)
                     elif daas and daas.exceeded_usage:
                         return Response({"error":_("you reach your time limit!")},status=status.HTTP_403_FORBIDDEN)
                     else:
+                        token = None
                         credential_env = os.getenv("DAAS_FORCE_CREDENTIAL")
-                        if credential_env.lower()=="false":
-                            force_credential = False
-                        else:
-                            force_credential = True
-                        if force_credential:
-                            http_port,https_port = Desktop().create_daas_with_credential(email,user_password)
-                        else:
+                        if credential_env.lower()=='token':
+                            salt = bcrypt.gensalt()
+                            byte_password = str.encode(user_password)
+                            # token = bcrypt.hashpw(byte_password, salt).decode()
+                            token = "abc"
+                            http_port,https_port = Desktop().create_daas_with_token(email,token,ip_address)
+                            Desktop().set_ip_restriction_by_port(ip_address,http_port)
+                        elif credential_env.lower()=="false":
                             http_port,https_port = Desktop().create_daas_without_crediential()
-                        container_id = Desktop().get_container_id_from_port(http_port) 
-                        daas = Daas.objects.create(email=email,http_port=http_port,https_port=https_port,is_running=True,last_uptime=datetime.datetime.now(),container_id=container_id,daas_version=latest_tag,last_login_ip=ip_address)
+                        else:
+                            http_port,https_port = Desktop().create_daas_with_credential(email,user_password)    
+                        container_id = Desktop().get_container_id_from_port(http_port)
+                        daas = Daas.objects.create(email=email,daas_token=token,http_port=http_port,https_port=https_port,is_running=True,last_uptime=datetime.datetime.now(),container_id=container_id,daas_version=latest_tag,last_login_ip=ip_address)
                         refresh_token = str(CustomToken.for_user(daas))
                         access_token = str(CustomToken.for_user(daas).access_token)
                         return Response({"http":f"http://{config.daas_provider_baseurl}:{http_port}","https":f"https://{config.daas_provider_baseurl}:{https_port}","refresh_token":refresh_token,"access_token":access_token},status.HTTP_200_OK)
@@ -127,7 +135,7 @@ class LogInView(APIView):
                         logger.error(traceback.format_exc())
                         return Response({"error":_("internal server error")},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             except:
-                
+                logger.error(traceback.format_exc())
                 # used when no authentication set or handle
                 try:
                     user = authenticate(request,email=email,password=user_password)
@@ -279,9 +287,19 @@ class IsValidUser(APIView):
                 valid_datas = ser_data.validated_data
                 email = valid_datas['email']
                 user_password = valid_datas['password']
-                authenticator = Keycloak()
-                is_valid_user = authenticator.is_valid_user(email,user_password)
-                return Response({"info":is_valid_user},status=status.HTTP_200_OK)
+                if os.getenv("DAAS_FORCE_CREDENTIAL") != "token":
+                    authenticator = Keycloak()
+                    is_valid_user = authenticator.is_valid_user(email,user_password)
+                    return Response({"info":is_valid_user},status=status.HTTP_200_OK)
+                else:
+                    try:
+                        daas = Daas.objects.get(email=email,token=user_password)
+                        if daas:
+                            return Response({"info":True},status=status.HTTP_200_OK)
+                        else:
+                            return Response({"info":False},status=status.HTTP_200_OK)
+                    except:
+                        return Response({"info":False},status=status.HTTP_200_OK)
             else:
                 return Response(ser_data.errors,status=status.HTTP_400_BAD_REQUEST)
         except:

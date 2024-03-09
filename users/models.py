@@ -21,6 +21,7 @@ class Daas(models.Model):
     
     id = models.UUIDField(primary_key=True,default=uuid.uuid4,unique=True)
     email = models.CharField(null=False,max_length=100,unique=True)
+    daas_token = models.CharField(null=True,blank=True,max_length=100,unique=True)
     http_port = models.PositiveIntegerField(unique=True,null=True)
     https_port = models.PositiveIntegerField(unique=True,null=True)
     last_uptime = models.DateTimeField(null=True,blank=True)
