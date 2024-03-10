@@ -114,3 +114,7 @@ class UserSerializer(serializers.ModelSerializer):
             instance.set_password(password)      
         return super().update(instance, validated_data)
             
+
+class LogoutSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField()
+    

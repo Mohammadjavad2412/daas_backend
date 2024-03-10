@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-13 14:27+0330\n"
+"POT-Creation-Date: 2024-03-10 11:39+0330\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -30,71 +30,81 @@ msgstr "قارسی"
 msgid "English"
 msgstr "انگلیسی"
 
-#: services/desktop.py:199 services/desktop.py:219
+#: services/desktop.py:269 services/desktop.py:289
 #, fuzzy
 #| msgid "invalid data passed"
 msgid "invalid daas"
 msgstr "کاربر معتبر نیست"
 
-#: users/views.py:68
+#: users/views.py:72
 msgid "This desktop is using by other user!!"
 msgstr "این دسکتاپ توسط شخص دیگری در حال استفاده است"
 
-#: users/views.py:70
+#: users/views.py:74
 msgid "your account is locked!"
 msgstr "دسکتاپ شما مسدود شده است.با ادمین تماس بگیرید."
 
-#: users/views.py:97
+#: users/views.py:103
 msgid "you reach your time limit!"
 msgstr "زمان استفاده شما از حد مجاز گذشته است"
 
-#: users/views.py:122 users/views.py:139 users/views.py:179
+#: users/views.py:130 users/views.py:147 users/views.py:193
 msgid "successfull"
 msgstr "موفق"
 
-#: users/views.py:124 users/views.py:141
+#: users/views.py:132 users/views.py:149
 msgid "invalid username or password"
 msgstr "ایمیل یا پسورد اشتباه است"
 
-#: users/views.py:127 users/views.py:144 users/views.py:236 users/views.py:282
+#: users/views.py:135 users/views.py:152 users/views.py:250 users/views.py:306
 msgid "internal server error"
 msgstr "خطای داخلی"
 
-#: users/views.py:184 users/views.py:210
+#: users/views.py:198 users/views.py:224
 msgid "invalid data passed"
 msgstr "کاربر معتبر نیست"
 
-#: users/views.py:205 users/views.py:223
+#: users/views.py:219 users/views.py:237
 #, fuzzy
 #| msgid "your account is locked!"
 msgid "you are blocked!"
 msgstr "دسکتاپ شما مسدود شده است.با ادمین تماس بگیرید."
 
-#: users/views.py:231
+#: users/views.py:245
 msgid "successfully update"
 msgstr "با موفقیت به روز رسانی شد"
 
-#: users/views.py:233
+#: users/views.py:247
 msgid "you can't update usage of down desktop!"
 msgstr "این دسکتاپ فعال نیست"
 
-#: users/views.py:254 users/views.py:263
+#: users/views.py:268 users/views.py:277
 msgid "reset successfully"
 msgstr "با موفقیت به روز رسانی شد"
 
-#: users/views.py:314
+#: users/views.py:338
 msgid "you can't delete yourself!"
 msgstr "شما نمی توانید خودتان را حذف کنید"
 
-#: users/views.py:329
+#: users/views.py:353
 #, fuzzy
 #| msgid "reset successfully"
 msgid "locked account successfully"
 msgstr "با موفقیت به روز رسانی شد"
 
-#: users/views.py:332
+#: users/views.py:356
 msgid "can't lock account with given id"
 msgstr "شما نمیتوانید با آیدی امانت را لاک کنید"
+
+#: users/views.py:374
+#, fuzzy
+#| msgid "reset successfully"
+msgid "log out successfully"
+msgstr "خروج با موفقیت انجام شد"
+
+#: users/views.py:377
+msgid "not allowed"
+msgstr "مجاز نیست"
 
 #~ msgid ""
 #~ "This desktop is open with other user, you should wait about {2*int(os."

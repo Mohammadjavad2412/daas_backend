@@ -8,6 +8,7 @@ router = routers.SimpleRouter()
 router.register("daas",views.DaasView)
 router.register("reset_usage",views.ResetUsage)
 router.register("lock_my_account",views.LockRequestView)
+router.register("logout",views.LogOutView)
 # router.register("delete_all_desktops",views.DeleteAllDesktops)
 router.register("",views.UsersView)
 

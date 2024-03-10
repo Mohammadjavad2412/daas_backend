@@ -2,8 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
-from django.contrib.auth import authenticate
-from users.serializers import LogInSerializer,DaasSerializer,UpdateDaasSerializer,UserSerializer,ValidUserSerializer
+from django.contrib.auth import authenticate , logout
+from users.serializers import LogInSerializer,DaasSerializer,UpdateDaasSerializer,UserSerializer,ValidUserSerializer,LogoutSerializer
 from users.handler import DaasTokenAuthentication
 from daas.permissions import OnlyAdmin,OnlyOwner,OnlyMetaAdmin
 from rest_framework.viewsets import ModelViewSet
@@ -11,7 +11,7 @@ from services.keycloak import Keycloak
 from services.syslog import SysLog
 from django.utils.translation import gettext as _
 from users.token import CustomToken
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken,AccessToken
 from rest_framework import filters
 from rest_framework.permissions import OR
 from services.desktop import Desktop
@@ -23,7 +23,8 @@ from django.contrib.auth import login
 import copy
 import os
 import subprocess
-import bcrypt
+import secrets
+import string
 import datetime
 import traceback
 
@@ -104,10 +105,8 @@ class LogInView(APIView):
                         token = None
                         credential_env = os.getenv("DAAS_FORCE_CREDENTIAL")
                         if credential_env.lower()=='token':
-                            salt = bcrypt.gensalt()
-                            byte_password = str.encode(user_password)
-                            # token = bcrypt.hashpw(byte_password, salt).decode()
-                            token = "abc"
+                            alphabet = string.ascii_letters + string.digits
+                            token = ''.join(secrets.choice(alphabet) for i in range(40))
                             http_port,https_port = Desktop().create_daas_with_token(email,token,ip_address)
                             Desktop().set_ip_restriction_by_port(ip_address,http_port)
                         elif credential_env.lower()=="false":
@@ -357,6 +356,32 @@ class LockRequestView(ModelViewSet):
         return Response({"error":_("can't lock account with given id")})
     
 
+class LogOutView(ModelViewSet):
+    queryset = Daas.objects.all()
+    serializer_class = LogoutSerializer
+    authentication_classes = (DaasTokenAuthentication,)
+    http_method_names = ['post']
+    
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        ser_data = LogoutSerializer(data=data)
+        if ser_data.is_valid():
+            refresh_token = request.data['refresh_token']
+            if isinstance(request.user,Daas):
+                daas = request.user
+                http_port = daas.http_port
+                daas.is_running = False
+                daas.last_uptime = datetime.datetime.now()
+                daas.save()
+                Desktop().stop_daas_from_port(http_port)
+            elif isinstance(request.user,Users):
+                logout(request)     
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"info":_("log out successfully")},status=status.HTTP_200_OK)
+        else:
+            return Response(ser_data.errors,status=status.HTTP_400_BAD_REQUEST)
+    
 # class DeleteAllDesktops(ModelViewSet):
 #     queryset = Daas.objects.all()
 #     authentication_classes = (DaasTokenAuthentication,)
