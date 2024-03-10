@@ -20,6 +20,7 @@ services:
       - DAAS_IMAGE_VERSION=1.1.1update
       - DAAS_START_PORT=30000
       - DAAS_END_PORT=31000
+      - ACCESS_IP_RANGE=192.168.0.0/16
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
