@@ -67,8 +67,9 @@ class LogInView(APIView):
                             now = datetime.datetime.now()
                             delta_time = now - datetime.timedelta(2*int(os.getenv("CELERY_PERIODIC_TASK_TIME")))
                             if last_uptime > delta_time:
+                                file_server_docker_ip = os.getenv("FILE_SERVER_DOCKER_IP")
                                 container_ip_address = Desktop().get_container_ip(daas.container_id)
-                                if ip_address != daas.last_login_ip and ip_address != os.getenv("FILE_SERVER_HOST") and ip_address != container_ip_address:
+                                if ip_address != daas.last_login_ip and ip_address != os.getenv("FILE_SERVER_HOST") and ip_address != container_ip_address and ip_address!=file_server_docker_ip:
                                     return Response({'error':_(f"This desktop is using by other user!!")},status=status.HTTP_400_BAD_REQUEST)
                         if daas.is_lock:
                             return Response({"error": _("your account is locked!")},status=status.HTTP_400_BAD_REQUEST)
@@ -296,9 +297,9 @@ class IsValidUser(APIView):
                         if daas:
                             return Response({"info":True},status=status.HTTP_200_OK)
                         else:
-                            return Response({"info":False},status=status.HTTP_200_OK)
+                            return Response({"info":True},status=status.HTTP_200_OK)
                     except:
-                        return Response({"info":False},status=status.HTTP_200_OK)
+                        return Response({"info":True},status=status.HTTP_200_OK)
             else:
                 return Response(ser_data.errors,status=status.HTTP_400_BAD_REQUEST)
         except:

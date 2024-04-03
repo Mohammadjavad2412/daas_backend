@@ -130,10 +130,11 @@ class Desktop:
         c1 = f'docker exec -it {container_id} /bin/bash -c "iptables -I OUTPUT -d {ip_address} -j ACCEPT"'
         p1 = subprocess.Popen(c1,shell=True)
         p1.communicate()
-        access_ip_range = os.getenv("ACCESS_IP_RANGE")
-        c2 = f'docker exec -it {container_id} /bin/bash -c "iptables -A OUTPUT -d {access_ip_range} -j DROP"'
-        p2 = subprocess.Popen(c2,shell=True)
-        p2.communicate()
+        forbidden_ip_ranges = os.getenv("FORBIDDEN_IP_RANGES").split(",")
+        for ip in forbidden_ip_ranges:
+            c2 = f'docker exec -it {container_id} /bin/bash -c "iptables -A OUTPUT -d {ip} -j DROP"'
+            p2 = subprocess.Popen(c2,shell=True)
+            p2.communicate()
         c3 = f'docker exec -it {container_id} /bin/bash -c "iptables -A OUTPUT -d 0/0 -j ACCEPT"'
         p3 = subprocess.Popen(c3,shell=True)
         p3.communicate()
@@ -143,10 +144,11 @@ class Desktop:
         c1 = f'docker exec -it {container_id} /bin/bash -c "iptables -I OUTPUT -d {ip_address} -j ACCEPT"'
         p1 = subprocess.Popen(c1,shell=True)
         p1.communicate()
-        access_ip_range = os.getenv("ACCESS_IP_RANGE")
-        c2 = f'docker exec -it {container_id} /bin/bash -c "iptables -A OUTPUT -d {access_ip_range} -j DROP"'
-        p2 = subprocess.Popen(c2,shell=True)
-        p2.communicate()
+        forbidden_ip_ranges = os.getenv("FORBIDDEN_IP_RANGES").split(",")
+        for ip in forbidden_ip_ranges:
+            c2 = f'docker exec -it {container_id} /bin/bash -c "iptables -A OUTPUT -d {ip} -j DROP"'
+            p2 = subprocess.Popen(c2,shell=True)
+            p2.communicate()
         c3 = f'docker exec -it {container_id} /bin/bash -c "iptables -A OUTPUT -d 0/0 -j ACCEPT"'
         p3 = subprocess.Popen(c3,shell=True)
         p3.communicate()
