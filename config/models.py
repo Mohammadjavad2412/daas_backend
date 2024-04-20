@@ -36,6 +36,7 @@ class DaasMetaConfig(models.Model):
     time_limit_value_in_hour = models.PositiveIntegerField(null=True,blank=True)
     max_transmission_upload_size = models.PositiveBigIntegerField(default=50)
     max_transmission_download_size = models.PositiveBigIntegerField(default=500)
+    is_recording = models.BooleanField(default=False)
     is_globally_config = models.BooleanField(default=False)
     
     def save(self, *args,**kwargs) -> None:

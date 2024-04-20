@@ -13,6 +13,7 @@ import subprocess
 import socket
 import yaml
 import docker
+import logging
 
 
 logger = SysLog().logger
@@ -67,7 +68,7 @@ class Desktop:
         if not http_port or not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
-        command = f'docker run -d -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")} -e CUSTOM_USER={email} \
+        command = f'docker run -d -v {settings.BASE_DIR}/scripts/record.sh:/home/kasm-user/record.sh -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")} -e CUSTOM_USER={email} \
                         -e PASSWORD={password} -e FILE_SERVER_HOST={settings.FILE_SERVER_HOST} \
                         -e MANAGER_HOST={settings.MANEGER_HOST} -p {http_port}:3000 -p {https_port}:3001 \
                         --device /dev/dri:/dev/dri \
@@ -87,7 +88,7 @@ class Desktop:
         if not http_port or not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
-        command = f'docker run -d -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")} \
+        command = f'docker run -d -v {settings.BASE_DIR}/scripts/record.sh:/home/kasm-user/record.sh -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")} \
                         -e FILE_SERVER_HOST={settings.FILE_SERVER_HOST} \
                         -e MANAGER_HOST={settings.MANEGER_HOST} -p {http_port}:3000 -p {https_port}:3001 \
                         --device /dev/dri:/dev/dri \
@@ -99,7 +100,7 @@ class Desktop:
         if err:
             logger.error(err)
         return http_port,https_port
-    
+
     def create_daas_with_token(self,email,token,source_ip,http_port=None,https_port=None):
         image = os.getenv("DAAS_DOCKER_IMAGE")
         version = os.getenv("DAAS_IMAGE_VERSION")
@@ -107,7 +108,8 @@ class Desktop:
         if not http_port or not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
-        command = f'docker run -d -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")}, \
+        compress_email = email.split('@')[0]
+        command = f'docker run -d -v {settings.BASE_DIR}/scripts/record.sh:/home/kasm-user/record.sh -v /home/hooman/Desktop/{compress_email}_records:/config/Videos/ -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")}, \
                             -e CUSTOM_USER= \
                             -e PASSWORD= \
                             -e TOKEN={token} -e USER={email} \
@@ -289,4 +291,24 @@ class Desktop:
                 Desktop().create_daas_with_credential(email,password,http_port,https_port)
         except:
             raise exceptions.ValidationError(_('invalid daas'))
+        
+    def session_recording(self, container_id, email): 
+        try:
+            daas = Daas.objects.filter(email__iexact=email).last()
+            daas_conf= daas.daas_configs
+            if hasattr(daas_conf, 'is_recording'):
+                record = daas_conf.is_recording
+                if record:
+                    c1 = f'sudo docker exec - it {container_id} /bin/bash -c "chmod +x /home/kasm-user/record.sh"'
+                    proc1 = subprocess.Popen(c1, shell=True)
+                    proc1.communicate()
+                    c2= f'sudo docker exec -it {container_id} /bin/bash -c "/home/kasm-user/record.sh"'
+                    proc2 = subprocess.Popen(c2,shell=True)
+                    proc2.communicate()
+                    logging.info("recording should be started")
+        except:
+            logging.error(traceback.format_exc())
+                       
+        
+        
         

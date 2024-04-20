@@ -21,6 +21,7 @@ from config.models import Config
 from utils.fuctions import get_client_ip_address
 from django.contrib.auth import login
 import copy
+import time
 import os
 import subprocess
 import secrets
@@ -80,9 +81,12 @@ class LogInView(APIView):
                         tag = Desktop().get_tag_of_container(container_id)
                         if tag == latest_tag:
                             Desktop().run_container_by_container_id(container_id,ip_address)
+                            time.sleep(2)
+                            Desktop().session_recording(container_id=container_id,email=email)
                         else:
                             Desktop().update_daas_version(container_id,email,user_password,token,ip_address)
-                            container_id = Desktop().get_container_id_from_port(http_port) 
+                            container_id = Desktop().get_container_id_from_port(http_port)
+                            Desktop().session_recording(container_id=container_id, email=email)
                             daas.container_id = container_id
                             daas.daas_configs = daas_configs
                             daas.usage_in_minute = usage_in_minute
@@ -116,6 +120,8 @@ class LogInView(APIView):
                             http_port,https_port = Desktop().create_daas_with_credential(email,user_password)    
                         container_id = Desktop().get_container_id_from_port(http_port)
                         daas = Daas.objects.create(email=email,daas_token=token,http_port=http_port,https_port=https_port,is_running=True,last_uptime=datetime.datetime.now(),container_id=container_id,daas_version=latest_tag,last_login_ip=ip_address)
+                        #session recording
+                        Desktop().session_recording(container_id=container_id,email=email)
                         refresh_token = str(CustomToken.for_user(daas))
                         access_token = str(CustomToken.for_user(daas).access_token)
                         return Response({"http":f"http://{config.daas_provider_baseurl}:{http_port}","https":f"https://{config.daas_provider_baseurl}:{https_port}","refresh_token":refresh_token,"access_token":access_token},status.HTTP_200_OK)
