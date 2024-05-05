@@ -1,4 +1,4 @@
-from daas.settings import BASE_DIR
+from daas.settings import BASE_DIR, RECORD_SH_PATH, RECORD_MOUNT_HOST_PATH
 from users.models import Daas
 from django.utils.translation import gettext as _
 from django.db.models import Q
@@ -68,7 +68,7 @@ class Desktop:
         if not http_port or not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
-        command = f'docker run -d -v {settings.BASE_DIR}/scripts/record.sh:/home/kasm-user/record.sh -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")} -e CUSTOM_USER={email} \
+        command = f'docker run -d -v {RECORD_SH_PATH}:/kclient/record.sh -v {RECORD_MOUNT_HOST_PATH}/{email}:/config/Videos/{email} -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")} -e CUSTOM_USER={email} \
                         -e PASSWORD={password} -e FILE_SERVER_HOST={settings.FILE_SERVER_HOST} \
                         -e MANAGER_HOST={settings.MANEGER_HOST} -p {http_port}:3000 -p {https_port}:3001 \
                         --device /dev/dri:/dev/dri \
@@ -109,7 +109,8 @@ class Desktop:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
         compress_email = email.split('@')[0]
-        command = f'docker run -d -v {settings.BASE_DIR}/scripts/record.sh:/home/kasm-user/record.sh -v /home/hooman/Desktop/{compress_email}_records:/config/Videos/ -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")}, \
+        encoded_email = email.replace("@", "%40")
+        command = f'docker run -d -v {RECORD_SH_PATH}:/kclient/record.sh -v {RECORD_MOUNT_HOST_PATH}/{email}:/config/Videos/{email} -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")}, \
                             -e CUSTOM_USER= \
                             -e PASSWORD= \
                             -e TOKEN={token} -e USER={email} \
@@ -129,29 +130,29 @@ class Desktop:
     
     def set_ip_restriction_by_port(self,ip_address,port):
         container_id = self.get_container_id_from_port(port)
-        c1 = f'docker exec -it {container_id} /bin/bash -c "iptables -I OUTPUT -d {ip_address} -j ACCEPT"'
+        c1 = f'docker exec {container_id} /bin/bash -c "iptables -I OUTPUT -d {ip_address} -j ACCEPT"'
         p1 = subprocess.Popen(c1,shell=True)
         p1.communicate()
         forbidden_ip_ranges = os.getenv("FORBIDDEN_IP_RANGES").split(",")
         for ip in forbidden_ip_ranges:
-            c2 = f'docker exec -it {container_id} /bin/bash -c "iptables -A OUTPUT -d {ip} -j DROP"'
+            c2 = f'docker exec {container_id} /bin/bash -c "iptables -A OUTPUT -d {ip} -j DROP"'
             p2 = subprocess.Popen(c2,shell=True)
             p2.communicate()
-        c3 = f'docker exec -it {container_id} /bin/bash -c "iptables -A OUTPUT -d 0/0 -j ACCEPT"'
+        c3 = f'docker exec {container_id} /bin/bash -c "iptables -A OUTPUT -d 0/0 -j ACCEPT"'
         p3 = subprocess.Popen(c3,shell=True)
         p3.communicate()
         
         
     def set_ip_restriction_by_container_id(self,container_id,ip_address):    
-        c1 = f'docker exec -it {container_id} /bin/bash -c "iptables -I OUTPUT -d {ip_address} -j ACCEPT"'
+        c1 = f'docker exec {container_id} /bin/bash -c "iptables -I OUTPUT -d {ip_address} -j ACCEPT"'
         p1 = subprocess.Popen(c1,shell=True)
         p1.communicate()
         forbidden_ip_ranges = os.getenv("FORBIDDEN_IP_RANGES").split(",")
         for ip in forbidden_ip_ranges:
-            c2 = f'docker exec -it {container_id} /bin/bash -c "iptables -A OUTPUT -d {ip} -j DROP"'
+            c2 = f'docker exec {container_id} /bin/bash -c "iptables -A OUTPUT -d {ip} -j DROP"'
             p2 = subprocess.Popen(c2,shell=True)
             p2.communicate()
-        c3 = f'docker exec -it {container_id} /bin/bash -c "iptables -A OUTPUT -d 0/0 -j ACCEPT"'
+        c3 = f'docker exec {container_id} /bin/bash -c "iptables -A OUTPUT -d 0/0 -j ACCEPT"'
         p3 = subprocess.Popen(c3,shell=True)
         p3.communicate()
         
@@ -189,7 +190,7 @@ class Desktop:
     def run_container_by_container_id(self,container_id,ip_address):
         logger.info(f"run container: {container_id}")
         subprocess.call(['docker','start',f'{container_id}'])
-        self.set_ip_restriction_by_container_id(container_id,ip_address)
+        # self.set_ip_restriction_by_container_id(container_id,ip_address)
         
     def delete_container(self,container_id):
         logger.info(f"delete container id:{container_id}")
@@ -284,7 +285,7 @@ class Desktop:
             credential_env = os.getenv("DAAS_FORCE_CREDENTIAL")
             if credential_env.lower()=="token":
                 Desktop().create_daas_with_token(email,token,ip_address,http_port,https_port)
-                Desktop().set_ip_restriction_by_port(ip_address,http_port)
+                # Desktop().set_ip_restriction_by_port(ip_address,http_port)
             elif credential_env.lower()=="false":
                 Desktop().create_daas_without_crediential(http_port,https_port)
             else:
@@ -299,16 +300,41 @@ class Desktop:
             if hasattr(daas_conf, 'is_recording'):
                 record = daas_conf.is_recording
                 if record:
-                    c1 = f'sudo docker exec - it {container_id} /bin/bash -c "chmod +x /home/kasm-user/record.sh"'
-                    proc1 = subprocess.Popen(c1, shell=True)
-                    proc1.communicate()
-                    c2= f'sudo docker exec -it {container_id} /bin/bash -c "/home/kasm-user/record.sh"'
-                    proc2 = subprocess.Popen(c2,shell=True)
-                    proc2.communicate()
+                    c1 = f'docker exec -d {container_id} /bin/bash -c "chmod +x /kclient/record.sh"'
+                    subprocess.run(c1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    c2= f'docker exec -d {container_id} /bin/bash -c "sh /kclient/record.sh"'
+                    subprocess.run(c2,shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                     logging.info("recording should be started")
         except:
             logging.error(traceback.format_exc())
                        
-        
+    def get_recording_length(self, file_path):
+        try:
+            result = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
+                             "format=duration", "-of",
+                             "default=noprint_wrappers=1:nokey=1", f"{settings.BASE_DIR}/streams/{file_path}"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+            utf8_format = result.stdout.decode('utf-8')
+            float_num = float(utf8_format)
+            int_num = int(float_num)
+            return int_num
+        except:
+            logger.error(traceback.format_exc())
+
+    def kill_recording(self, container_id):
+        logger.info('killing recording process...')
+        try:
+            c1 = f'docker exec {container_id} /bin/bash -c "ps aux | grep record.sh"'
+            proc1 = subprocess.run(c1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stderr = proc1.stderr.decode()
+            stdout = proc1.stdout.decode()
+            if stdout:
+                pid = int(proc1.stdout.decode().split()[1])
+            c2 = f'docker exec -d {container_id} /bin/bash -c "kill {pid}"'
+            subprocess.run(c2, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except:
+            logger.error(traceback.format_exc())
+
         
         

@@ -6,3 +6,6 @@ def get_client_ip_address(request):
     else:
         ip_addr = req_headers.get('REMOTE_ADDR')
     return ip_addr
+
+#ffmpeg -f concat -i videos.txt -c copy output.mp4
+#find . -type f -name "*.mp4" | sed 's/\./file \0:/g' > file_list.txt

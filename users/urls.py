@@ -19,6 +19,8 @@ urlpatterns = [
     path("profile/",views.Profile.as_view({"get":"get"}),name='my_desktop'),
     path("daas/update_usage/",views.UpdateUsage.as_view({"get":"get"}),name="update_usage"),
     path("is_valid_user/",views.IsValidUser.as_view(),name="valid_user"),
+    path("record_list/", views.RecordsListView.as_view(), name="record_list"),
+    path("record_file/", views.RecordsFileView.as_view(), name="record_file")
 ]
 
 urlpatterns+=router.urls

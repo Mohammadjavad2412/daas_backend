@@ -4,6 +4,7 @@ from users.models import Daas,Users
 from config.models import Config,WhiteListFiles,DaasMetaConfig
 from config.serializers import DaasMetaConfigSerializer
 from users.token import CustomToken
+from services.desktop import Desktop
 import base64
 
 
@@ -73,6 +74,10 @@ class UpdateDaasSerializer(WritableNestedModelSerializer,serializers.ModelSerial
     def update(self, instance, validated_data):
         if 'daas_configs' in validated_data:
             instance.daas_configs.is_globally_config = False
+        record = validated_data['daas_configs']['is_recording']
+        if not record:
+            container_id = instance.container_id
+            Desktop().kill_recording(container_id)
         return super().update(instance, validated_data)
                 
                 
@@ -111,7 +116,7 @@ class UserSerializer(serializers.ModelSerializer):
             same_password_sent = instance.check_password(password)
             if same_password_sent:
                 raise serializers.ValidationError("try another password")
-            instance.set_password(password)      
+            instance.set_password(password)
         return super().update(instance, validated_data)
             
 

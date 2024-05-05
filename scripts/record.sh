@@ -7,23 +7,26 @@ RECORDING=false
 # Variable to track last motion time
 LAST_MOTION_TIME=0
 # Timeout for no motion (in seconds)
-NO_MOTION_TIMEOUT=5
+NO_MOTION_TIMEOUT=6
 
-if [ -z "$CUSTOM_USER"]; then
+if [ -z "$CUSTOM_USER" ]; then
     user="$USER"
 else
     user="$CUSTOM_USER"
 fi
 
+today_date=$(date +"%Y%m%d")
+video_directory="/config/Videos/$user/$today_date"
+
 # Function to start recording and log
 start_recording() {
-    if [ ! -d "/config/Videos/$user" ]; then
-        mkdir "/config/Videos/$user"
-        echo "Directory '/config/Videos/$user' created."
+    if [ ! -d "$video_directory" ]; then
+        mkdir -p "$video_directory"
+        echo "Directory '$video_directory' created."
     else
-        echo "Directory '/config/$user' already exists."
+        echo "Directory '$video_directory' already exists."
     fi
-    local filename="/config/Videos/${user}/out_$(date +%Y%m%d_%H%M%S).avi"
+    local filename="$video_directory/${user}_out_$(date +%Y%m%d_%H%M%S).mp4"
     echo "$(date +"%Y-%m-%d %H:%M:%S"): Recording started" >> "$LOG_FILE"
     ffmpeg -f x11grab -y -r 30 -s 1280x814 -i $DISPLAY -vcodec libx264 "$filename" &
     RECORDING=true

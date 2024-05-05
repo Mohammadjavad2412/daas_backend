@@ -20,6 +20,8 @@ from users.models import Daas,Users
 from config.models import Config
 from utils.fuctions import get_client_ip_address
 from django.contrib.auth import login
+from daas import settings
+from django.http import FileResponse
 import copy
 import time
 import os
@@ -81,8 +83,6 @@ class LogInView(APIView):
                         tag = Desktop().get_tag_of_container(container_id)
                         if tag == latest_tag:
                             Desktop().run_container_by_container_id(container_id,ip_address)
-                            time.sleep(2)
-                            Desktop().session_recording(container_id=container_id,email=email)
                         else:
                             Desktop().update_daas_version(container_id,email,user_password,token,ip_address)
                             container_id = Desktop().get_container_id_from_port(http_port)
@@ -103,6 +103,7 @@ class LogInView(APIView):
                         if ip_address != Desktop().get_container_ip(daas.container_id):
                             daas.last_login_ip = ip_address
                         daas.save()
+                        Desktop().session_recording(container_id=container_id,email=email)
                         return Response({"http":f"http://{config.daas_provider_baseurl}:{daas.http_port}","https":f"https://{config.daas_provider_baseurl}:{daas.https_port}","refresh_token":refresh_token,"access_token":access_token},status.HTTP_200_OK)
                     elif daas and daas.exceeded_usage:
                         return Response({"error":_("you reach your time limit!")},status=status.HTTP_403_FORBIDDEN)
@@ -113,7 +114,7 @@ class LogInView(APIView):
                             alphabet = string.ascii_letters + string.digits
                             token = ''.join(secrets.choice(alphabet) for i in range(40))
                             http_port,https_port = Desktop().create_daas_with_token(email,token,ip_address)
-                            Desktop().set_ip_restriction_by_port(ip_address,http_port)
+                            # Desktop().set_ip_restriction_by_port(ip_address,http_port)
                         elif credential_env.lower()=="false":
                             http_port,https_port = Desktop().create_daas_without_crediential()
                         else:
@@ -175,6 +176,7 @@ class DaasView(ModelViewSet):
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
         response.data['online_users'] = Daas.objects.filter(is_running=True).count()
+        response.data['online_recording_sessions'] = Daas.objects.filter(daas_configs__is_recording=True).count()
         return response
     
     def get_serializer_class(self):
@@ -389,6 +391,93 @@ class LogOutView(ModelViewSet):
         else:
             return Response(ser_data.errors,status=status.HTTP_400_BAD_REQUEST)
     
+
+class RecordsListView(APIView):
+
+
+    def get(self, request):
+        try:
+            id = request.query_params.get('id')
+            daas_user = Daas.objects.get(id=id)
+            daas_user_email = daas_user.email
+            dir = os.path.join(settings.BASE_DIR, "streams")
+            all_contents = os.listdir(dir)
+            response = {}
+            for content in all_contents:
+                if os.path.isdir(os.path.join(dir, content)) and content == daas_user_email:
+                    user_path = os.path.join(dir, content)                    
+                    for root, dirs, files in os.walk(user_path):
+                        if files:
+                            day_time = root.split('/')[-1]
+                            response[day_time] = files
+            response_copy = response.copy()
+            result = {"today": {}, "history": {}}
+            for date, file_names in response_copy.items():
+                val_list = []
+                for file_name in file_names:
+                    record_time_estimate = Desktop().get_recording_length(f"{daas_user_email}/{date}/{file_name}")
+                    val = {"record_length": record_time_estimate, "record_name": file_name}
+                    val_list.append(val)
+                today = str(datetime.datetime.today().strftime('%Y%m%d'))
+                # today = "20240423"
+                if date == today:
+                    result["today"][date] = val_list
+                else:
+                    result["history"][date] = val_list
+            return Response(result, status.HTTP_200_OK)
+        except:
+            logger.error(traceback.format_exc())
+
+            
+class RecordsFileView(APIView):
+
+    def get(self, request):
+        try:
+            record_name = request.query_params.get("record_name")
+            user_record_name = record_name.split('_')[0]
+            day_time = record_name.split('_')[2]
+            dir = os.path.join(settings.BASE_DIR, "streams")
+            for root, dirs, files in os.walk(dir):
+                if user_record_name in dirs:
+                    user_dir_path = os.path.join(dir, user_record_name)
+                    record_file_path = os.path.join(user_dir_path,day_time,record_name)
+                    if os.path.exists(record_file_path):
+                        response = FileResponse(open(record_file_path, 'rb'))
+                        return response
+                    else:
+                        return Response({'error': 'file not found'}, status.HTTP_400_BAD_REQUEST)
+        except:
+            logger.error(traceback.format_exc())
+
+
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # class DeleteAllDesktops(ModelViewSet):
 #     queryset = Daas.objects.all()
 #     authentication_classes = (DaasTokenAuthentication,)

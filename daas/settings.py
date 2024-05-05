@@ -214,10 +214,17 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'users.tasks.reset_daases_usage', 
         'schedule': crontab(minute='0',hour='0'), 
     },
+    'concat_records' : {
+        'task': 'users.tasks.concat_recors',
+        'schedule': crontab(minute=59, hour=23)
+    }
 }
 
 FILE_SERVER_HOST = os.getenv("FILE_SERVER_HOST")
 MANEGER_HOST = os.getenv("MANEGER_HOST")
+RECORD_SH_PATH=os.getenv("RECORD_SH_PATH")
+RECORD_MOUNT_HOST_PATH=os.getenv("RECORD_MOUNT_HOST_PATH")
+
 
 TIME_ZONE = os.getenv("TIME_ZONE")
 
