@@ -73,7 +73,8 @@ class LogInView(APIView):
                                 file_server_docker_ip = os.getenv("FILE_SERVER_DOCKER_IP")
                                 container_ip_address = Desktop().get_container_ip(daas.container_id)
                                 if ip_address != daas.last_login_ip and ip_address != os.getenv("FILE_SERVER_HOST") and ip_address != container_ip_address and ip_address!=file_server_docker_ip:
-                                    return Response({'error':_(f"This desktop is using by other user!!")},status=status.HTTP_400_BAD_REQUEST)
+                                    pass
+                                    # return Response({'error':_(f"This desktop is using by other user!!")},status=status.HTTP_400_BAD_REQUEST)
                         if daas.is_lock:
                             return Response({"error": _("your account is locked!")},status=status.HTTP_400_BAD_REQUEST)
                         refresh_token = str(CustomToken.for_user(daas))
@@ -121,8 +122,6 @@ class LogInView(APIView):
                             http_port,https_port = Desktop().create_daas_with_credential(email,user_password)    
                         container_id = Desktop().get_container_id_from_port(http_port)
                         daas = Daas.objects.create(email=email,daas_token=token,http_port=http_port,https_port=https_port,is_running=True,last_uptime=datetime.datetime.now(),container_id=container_id,daas_version=latest_tag,last_login_ip=ip_address)
-                        #session recording
-                        Desktop().session_recording(container_id=container_id,email=email)
                         refresh_token = str(CustomToken.for_user(daas))
                         access_token = str(CustomToken.for_user(daas).access_token)
                         return Response({"http":f"http://{config.daas_provider_baseurl}:{http_port}","https":f"https://{config.daas_provider_baseurl}:{https_port}","refresh_token":refresh_token,"access_token":access_token},status.HTTP_200_OK)

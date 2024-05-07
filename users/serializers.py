@@ -75,9 +75,14 @@ class UpdateDaasSerializer(WritableNestedModelSerializer,serializers.ModelSerial
         if 'daas_configs' in validated_data:
             instance.daas_configs.is_globally_config = False
         record = validated_data['daas_configs']['is_recording']
-        if not record:
+        prev_record = instance['daas_configs']['is_recording']
+        if not record and prev_record:
             container_id = instance.container_id
             Desktop().kill_recording(container_id)
+        elif record and not prev_record:
+            container_id = instance.container_id
+            email = instance.email
+            Desktop().session_recording(container_id, email)
         return super().update(instance, validated_data)
                 
                 

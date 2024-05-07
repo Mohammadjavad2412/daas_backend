@@ -77,7 +77,7 @@ def concat_records():
             if filenames:
                 day_time = root.split('/')[-1]
                 if today_date == day_time:
-                    subprocess.run(["sh", "-c", f"printf 'file \'%s\'\\n' {root}/*.avi > {root}/video_list.txt"])
+                    subprocess.run(["sh", "-c", f"printf 'file \'%s\'\\n' {root}/*.mp4 > {root}/video_list.txt"])
                     c1 = f'ffmpeg -f concat -safe 0 -i {root}/video_list.txt -c copy {root}/{username}_concatvideo_{today_date}.mp4'
                     subprocess.run(c1, shell=True)
                     for filename in filenames:

@@ -8,4 +8,5 @@ WORKDIR /app
 RUN python3 -m pip install -U pip
 RUN apt update
 RUN apt install docker.io -y
+RUN apt install ffmpeg
 EXPOSE 8000

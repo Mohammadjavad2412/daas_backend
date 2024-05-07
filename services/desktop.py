@@ -68,7 +68,7 @@ class Desktop:
         if not http_port or not https_port:
             http_port = self.random_free_port()
             https_port = self.random_free_port()
-        command = f'docker run -d -v {RECORD_SH_PATH}:/kclient/record.sh -v {RECORD_MOUNT_HOST_PATH}/{email}:/config/Videos/{email} -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")} -e CUSTOM_USER={email} \
+        command = f'docker run -d -v {RECORD_MOUNT_HOST_PATH}/{email}:/config/Videos/{email} -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")} -e CUSTOM_USER={email} \
                         -e PASSWORD={password} -e FILE_SERVER_HOST={settings.FILE_SERVER_HOST} \
                         -e MANAGER_HOST={settings.MANEGER_HOST} -p {http_port}:3000 -p {https_port}:3001 \
                         --device /dev/dri:/dev/dri \
@@ -110,7 +110,7 @@ class Desktop:
             https_port = self.random_free_port()
         compress_email = email.split('@')[0]
         encoded_email = email.replace("@", "%40")
-        command = f'docker run -d -v {RECORD_SH_PATH}:/kclient/record.sh -v {RECORD_MOUNT_HOST_PATH}/{email}:/config/Videos/{email} -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")}, \
+        command = f'docker run -d -v {RECORD_MOUNT_HOST_PATH}/{email}:/config/Videos/{email} -e TITLE=net-sep -e TZ={os.getenv("TIME_ZONE")}, \
                             -e CUSTOM_USER= \
                             -e PASSWORD= \
                             -e TOKEN={token} -e USER={email} \
